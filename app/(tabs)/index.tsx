@@ -1,70 +1,171 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View,TextInput, Text, StyleSheet, TouchableOpacity, Image, Alert, SafeAreaView } from 'react-native';
+import { useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
+//import { initializeDatabase, actualizarNombre } from '@/database/db';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+// import * as SQLite from 'expo-sqlite'; 
 
-export default function HomeScreen() {
+
+export default function index() {
+  const navigation = useNavigation();
+  const [username, setUsername] = useState('');
+
+  //DATABASE
+  // const db = await SQLite.openDatabaseAsync('DBrain.db');
+
+  // db.execAsync
+
+
+  // useEffect(() => {
+  //   initializeDatabase(); // Call to initialize the database
+  // }, []);
+
+
+
+  // const handleSaveUsername = () => {
+  //   if (username.trim() === '') {
+  //     Alert.alert('Error', 'Por favor, ingresa un nombre de usuario.');
+  //     return;
+  //   }
+  //   actualizarNombre(username);
+  //   Alert.alert('Éxito', `Nombre de usuario "${username}" guardado.`);
+  //   setUsername(''); // Clear the input field
+  // };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      {/* Header con saludo */}
+      <View style={styles.header}>
+        <Text style={styles.greeting}>¡Hola, Usuario!</Text>
+        <Text style={styles.subHeader}>Bienvenido a tu panel de control</Text>
+      </View>
+      {/* Sección de progreso del usuario */}
+      <View style={styles.progressSection}>
+        <Text style={styles.progressTitle}>Progreso del usuario</Text>
+        {/* <Image 
+          source={require('@/assets/images/progress-bar.png')} 
+          style={styles.progressBar}
+        /> */}
+        <Text style={styles.progressText}>Nivel 3 de 10 completado</Text>
+      </View>
+
+
+      <View style={styles.buttonsContainer}>
+        <Text style={styles.title}>Ingresar Us</Text>
+        <SafeAreaView>
+          <TextInput
+            style={styles.input}
+            placeholder="Escribe tu nombre"
+            onChangeText={setUsername}
+            value={username}
+          />
+        </SafeAreaView>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => Alert.alert('Hola')}
+          // handleSaveUsername
+        >
+          <Text style={styles.buttonText}>Guardar Nombre</Text>
+        </TouchableOpacity>
+
+      </View>
+
+
+
+
+
+
+      {/* Botones para navegar a las principales secciones */}
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('Desafios')}
+        >
+          <Text style={styles.buttonText}>Niveles</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('Desafios')}
+        >
+          <Text style={styles.buttonText}>Trofeos</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('Desafios')}
+        >
+          <Text style={styles.buttonText}>Asesorías</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: '#f0f0f0',
+    padding: 20,
+  },
+  header: {
+    marginBottom: 30,
+  },
+  greeting: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#27613C',
+  },
+  subHeader: {
+    fontSize: 18,
+    color: '#707070',
+  },
+  progressSection: {
+    marginBottom: 40,
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  progressTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  progressBar: {
+    width: '80%',
+    height: 20,
+    backgroundColor: '#27613C',
+    marginBottom: 10,
+  },
+  progressText: {
+    fontSize: 16,
+    color: '#707070',
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  button: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    borderRadius: 10,
+  },
+  buttonText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  input: {
+    width: '100%',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginBottom: 20,
   },
 });

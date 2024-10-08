@@ -24,14 +24,68 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="Niveles"
         options={{
-          title: 'Explore',
+          title: 'Niveles',
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name={focused ? 'code-slash' : 'code-slash-outline'} color={color} />
+            <TabBarIcon name={focused ? 'checkmark-circle' : 'checkmark-circle'} color={color} />
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="Trofeos"
+        options={{
+          title: 'Trofeos',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'trophy' : 'trophy-outline'} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="Perfil"
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'person' : 'person'} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="Desafios"
+        options={{
+          href: null,
+          title: 'Desafios',
+        }}
+      />
+
+      <Tabs.Screen
+        name="Presentacion"
+        options={{
+          href: null,
+          title: 'Presentacion',
+        }}
+      />
+
+      <Tabs.Screen
+        name="Administrador"
+        options={{
+          href: null,
+          title: 'Presentacion',
+        }}
+      />
+
+      <Tabs.Screen
+        name="LoginPatron"
+        options={{
+          href: null,
+          title: 'Presentacion',
+        }}
+      />
+
+
     </Tabs>
   );
 }
