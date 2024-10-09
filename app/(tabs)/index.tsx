@@ -63,10 +63,10 @@ export default function index() {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => Alert.alert('Hola')}
+          onPress={() => navigation.navigate('Administrador')}
           // handleSaveUsername
         >
-          <Text style={styles.buttonText}>Guardar Nombre</Text>
+          <Text style={styles.buttonText}>Ir con la patrona</Text>
         </TouchableOpacity>
 
       </View>

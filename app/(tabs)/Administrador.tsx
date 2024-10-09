@@ -1,9 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Button, FlatList, TouchableOpacity } from 'react-native';
-// import { supabase } from './supabase'; // Import Supabase client
+import { supabase } from '@/database/supabase.js'; // Import Supabase client
+import { useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
 
 export default function Dashboard() {
+  const navigation = useNavigation();
   const [questions, setQuestions] = useState([]);
   const [newQuestion, setNewQuestion] = useState('');
   const [newLevel, setNewLevel] = useState('');
@@ -13,146 +15,76 @@ export default function Dashboard() {
     fetchQuestions(); // Fetch questions when the component loads
   }, []);
 
-  // // Fetch all questions and options from Supabase
-  // const fetchQuestions = async () => {
-  //   const { data, error } = await supabase
-  //     .from('questions')
-  //     .select('id, question, level, options(id, option_text, is_correct)');
+  // Fetch all questions and options from Supabase
+  const fetchQuestions = async () => {
+    const { data, error } = await supabase
+      .from('QuestionsTable')
+      .select('id_question, question, level, OptionsTable(id_option, option_text, is_correct)');
 
-  //   if (error) {
-  //     console.error('Error fetching questions:', error);
-  //   } else {
-  //     setQuestions(data);
-  //   }
-  // };
+    if (error) {
+      console.error('Error fetching questions:', error);
+    } else {
+      setQuestions(data);
+    }
+  };
 
-  // // Create a new question with its options
-  // const createQuestion = async () => {
-  //   if (!newQuestion || !newLevel) return;
 
-  //   // Insert new question
-  //   const { data: questionData, error: questionError } = await supabase
-  //     .from('questions')
-  //     .insert([{ question: newQuestion, level: parseInt(newLevel) }])
-  //     .single();
+  // Delete a question
+  const deleteQuestion = async (fk_id_question) => {
+    const { error: optionsError } = await supabase
+      .from('OptionsTable')
+      .delete()
+      .eq('fk_id_question', fk_id_question);
 
-  //   if (questionError) {
-  //     console.error('Error creating question:', questionError);
-  //     return;
-  //   }
+    if (optionsError) {
+      console.error('Error deleting options:', optionsError);
+      return;
+    }
 
-  //   // Insert options for the question
-  //   const formattedOptions = options.map((option) => ({
-  //     question_id: questionData.id,
-  //     option_text: option.text,
-  //     is_correct: option.isCorrect ? 1 : 0,
-  //   }));
+    const { error: questionError } = await supabase
+      .from('QuestionsTable')
+      .delete()
+      .eq('id', fk_id_question);
 
-  //   const { data: optionsData, error: optionsError } = await supabase
-  //     .from('options')
-  //     .insert(formattedOptions);
-
-  //   if (optionsError) {
-  //     console.error('Error creating options:', optionsError);
-  //   } else {
-  //     console.log('Question and options created:', questionData, optionsData);
-  //     fetchQuestions(); // Refresh the list of questions
-  //   }
-  // };
-
-  // // Delete a question
-  // const deleteQuestion = async (questionId) => {
-  //   const { error: optionsError } = await supabase
-  //     .from('options')
-  //     .delete()
-  //     .eq('question_id', questionId);
-
-  //   if (optionsError) {
-  //     console.error('Error deleting options:', optionsError);
-  //     return;
-  //   }
-
-  //   const { error: questionError } = await supabase
-  //     .from('questions')
-  //     .delete()
-  //     .eq('id', questionId);
-
-  //   if (questionError) {
-  //     console.error('Error deleting question:', questionError);
-  //   } else {
-  //     fetchQuestions(); // Refresh the list after deletion
-  //   }
-  // };
+    if (questionError) {
+      console.error('Error deleting question:', questionError);
+    } else {
+      fetchQuestions(); // Refresh the list after deletion
+    }
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Bienvenida Angie</Text>
-      
-      {/* Form to create a new question
-      <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Nueva Pregunta"
-          value={newQuestion}
-          onChangeText={setNewQuestion}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Nivel de la Pregunta"
-          value={newLevel}
-          onChangeText={setNewLevel}
-          keyboardType="numeric"
-        />
 
-        {options.map((option, index) => (
-          <View key={index} style={styles.optionContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder={`Opción ${index + 1}`}
-              value={option.text}
-              onChangeText={(text) => {
-                const newOptions = [...options];
-                newOptions[index].text = text;
-                setOptions(newOptions);
-              }}
-            />
-            <TouchableOpacity
-              onPress={() => {
-                const newOptions = [...options];
-                newOptions[index].isCorrect = !newOptions[index].isCorrect;
-                setOptions(newOptions);
-              }}
-              style={[
-                styles.checkbox,
-                option.isCorrect ? styles.checkboxChecked : styles.checkboxUnchecked,
-              ]}
-            >
-              <Text style={styles.checkboxText}>{option.isCorrect ? 'Correcta' : 'Incorrecta'}</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate('AdminAdd')}
+      // handleSaveUsername
+      >
+        <Text style={styles.buttonText}>Agregar Pregunta</Text>
+      </TouchableOpacity>
 
-        <Button title="Crear Pregunta" onPress={createQuestion} />
-      </View>
 
-/////List of questions grouped by levels 
+
+      {/* List of questions grouped by levels */}
       <FlatList
         data={questions}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.id_question.toString()}
         renderItem={({ item }) => (
           <View style={styles.questionContainer}>
             <Text style={styles.questionText}>
               Nivel {item.level}: {item.question}
             </Text>
 
-  //////Display options 
+            {/* Display options */}
             {item.options && item.options.map((option) => (
-              <Text key={option.id} style={styles.optionText}>
+              <Text key={option.id_option} style={styles.optionText}>
                 - {option.option_text} {option.is_correct ? '(Correcta)' : ''}
               </Text>
             ))}
 
-  ////// Delete button
+            {/* Delete button */}
             <Button
               title="Eliminar Pregunta"
               onPress={() => deleteQuestion(item.id)}
@@ -160,7 +92,7 @@ export default function Dashboard() {
             />
           </View>
         )}
-      /> */}
+      />
     </View>
   );
 }
@@ -215,6 +147,17 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     marginLeft: 10,
+  },
+  button: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    borderRadius: 10,
+  },
+  buttonText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
 });
 
