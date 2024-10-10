@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Button, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { supabase } from '@/database/supabase.js'; // Import Supabase client
 import { useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
 
@@ -11,41 +11,47 @@ export default function Dashboard() {
     const [newLevel, setNewLevel] = useState('');
     const [options, setOptions] = useState([{ text: '', isCorrect: false }, { text: '', isCorrect: false }, { text: '', isCorrect: false }, { text: '', isCorrect: false }]);
 
-    useEffect(() => {
-        fetchQuestions(); // Fetch questions when the component loads
-    }, []);
-
-    // Fetch all questions and options from Supabase
-    const fetchQuestions = async () => {
-        const { data, error } = await supabase
-            .from('QuestionsTable')
-            .select('id_question, question, level, OptionsTable(id_option, option_text, is_correct)');
-
-        if (error) {
-            console.error('Error fetching questions:', error);
-        } else {
-            setQuestions(data);
-        }
-    };
-
-    // Create a new question with its options
+    // Create a new question with his options
     const createQuestion = async () => {
-        if (!newQuestion || !newLevel) return;
+
+        // Verificar que pregunta y nivel no esten vacios
+        if (!newQuestion || !newLevel) {
+            Alert.alert('Espacios vacios');
+            return;
+        }
+
+        // Verificar que no haya opciones vacías
+        for (let i = 0; i < options.length; i++) {
+            if (!options[i].text.trim()) {
+                Alert.alert(`La opción ${i + 1} está vacía`);
+                return;
+            }
+        }
+
+        // Verificar que haya al menos una opción correcta
+        const hasCorrectOption = options.some(option => option.isCorrect);
+
+        if (!hasCorrectOption) {
+            Alert.alert('Debe haber al menos una opción correcta');
+            return;
+        }
+
 
         // Insert new question
         const { data: questionData, error: questionError } = await supabase
             .from('QuestionsTable')
             .insert([{ question: newQuestion, level: parseInt(newLevel) }])
-            .single();
+            .select();
 
         if (questionError) {
-            console.error('Error creating question:', questionError);
+            console.log('Error creating question:', questionError);
+            Alert.alert('Algo salio mal, intentelo de nuevo');
             return;
         }
 
         // Insert options for the question
         const formattedOptions = options.map((option) => ({
-            fk_id_question: questionData.id,
+            fk_id_question: questionData[0].id_question,
             option_text: option.text,
             is_correct: option.isCorrect ? 1 : 0,
         }));
@@ -58,31 +64,6 @@ export default function Dashboard() {
             console.error('Error creating options:', optionsError);
         } else {
             console.log('Question and options created:', questionData, optionsData);
-            fetchQuestions(); // Refresh the list of questions
-        }
-    };
-
-    // Delete a question
-    const deleteQuestion = async (fk_id_question) => {
-        const { error: optionsError } = await supabase
-            .from('OptionsTable')
-            .delete()
-            .eq('fk_id_question', fk_id_question);
-
-        if (optionsError) {
-            console.error('Error deleting options:', optionsError);
-            return;
-        }
-
-        const { error: questionError } = await supabase
-            .from('QuestionsTable')
-            .delete()
-            .eq('id', fk_id_question);
-
-        if (questionError) {
-            console.error('Error deleting question:', questionError);
-        } else {
-            fetchQuestions(); // Refresh the list after deletion
         }
     };
 
@@ -144,33 +125,6 @@ export default function Dashboard() {
 
                 <Button title="Crear Pregunta" onPress={createQuestion} />
             </View>
-
-            {/* List of questions grouped by levels */}
-            <FlatList
-                data={questions}
-                keyExtractor={(item) => item.id_question.toString()}
-                renderItem={({ item }) => (
-                    <View style={styles.questionContainer}>
-                        <Text style={styles.questionText}>
-                            Nivel {item.level}: {item.question}
-                        </Text>
-
-                        {/* Display options */}
-                        {item.options && item.options.map((option) => (
-                            <Text key={option.id_option} style={styles.optionText}>
-                                - {option.option_text} {option.is_correct ? '(Correcta)' : ''}
-                            </Text>
-                        ))}
-
-                        {/* Delete button */}
-                        <Button
-                            title="Eliminar Pregunta"
-                            onPress={() => deleteQuestion(item.id)}
-                            color="red"
-                        />
-                    </View>
-                )}
-            />
         </View>
     );
 }
@@ -238,33 +192,3 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
 });
-
-
-
-
-
-
-// // Dashboard.tsx
-// import React from 'react';
-// import { View, Text, StyleSheet } from 'react-native';
-
-// export default function Dashboard() {
-//   return (
-//     <View style={styles.container}>
-//       <Text style={styles.title}>Bienvenida Angie</Text>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     backgroundColor: '#fff',
-//   },
-//   title: {
-//     fontSize: 24,
-//     fontWeight: 'bold',
-//   },
-// });
