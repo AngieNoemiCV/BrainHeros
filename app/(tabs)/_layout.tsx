@@ -15,7 +15,7 @@ export default function TabLayout() {
         headerShown: false,
       }}>
       <Tabs.Screen
-        name="index"
+        name="Panel"
         options={{
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
@@ -85,6 +85,21 @@ export default function TabLayout() {
         }}
       />
 
+      <Tabs.Screen
+        name="AdminAdd"
+        options={{
+          href: null,
+          title: 'Presentacion',
+        }}
+      />
+
+      <Tabs.Screen
+        name="index"
+        options={{
+          href: null,
+          title: 'Presentacion',
+        }}
+      />
 
     </Tabs>
   );

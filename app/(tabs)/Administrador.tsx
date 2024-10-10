@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Button, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { supabase } from '@/database/supabase.js'; // Import Supabase client
 import { useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
 
@@ -44,18 +44,19 @@ export default function Dashboard() {
     const { error: questionError } = await supabase
       .from('QuestionsTable')
       .delete()
-      .eq('id', fk_id_question);
+      .eq('id_question', fk_id_question);
 
     if (questionError) {
       console.error('Error deleting question:', questionError);
     } else {
       fetchQuestions(); // Refresh the list after deletion
+      Alert.alert('Eliminado correctamente');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bienvenida Angie</Text>
+      <Text style={styles.title}>Bienvenida Angie e</Text>
 
       <TouchableOpacity
         style={styles.button}
@@ -63,6 +64,14 @@ export default function Dashboard() {
       // handleSaveUsername
       >
         <Text style={styles.buttonText}>Agregar Pregunta</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate('index')}
+      // handleSaveUsername
+      >
+        <Text style={styles.buttonText}>Volver al inicio</Text>
       </TouchableOpacity>
 
 
@@ -87,7 +96,7 @@ export default function Dashboard() {
             {/* Delete button */}
             <Button
               title="Eliminar Pregunta"
-              onPress={() => deleteQuestion(item.id)}
+              onPress={() => deleteQuestion(item.id_question)}
               color="red"
             />
           </View>
@@ -160,33 +169,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-
-
-
-
-
-
-// // Dashboard.tsx
-// import React from 'react';
-// import { View, Text, StyleSheet } from 'react-native';
-
-// export default function Dashboard() {
-//   return (
-//     <View style={styles.container}>
-//       <Text style={styles.title}>Bienvenida Angie</Text>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     backgroundColor: '#fff',
-//   },
-//   title: {
-//     fontSize: 24,
-//     fontWeight: 'bold',
-//   },
-// });

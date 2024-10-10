@@ -63,7 +63,17 @@ export default function Dashboard() {
         if (optionsError) {
             console.error('Error creating options:', optionsError);
         } else {
-            console.log('Question and options created:', questionData, optionsData);
+            //console.log('Question and options created:', questionData, optionsData);
+            Alert.alert('Pregunta agregada');
+
+            // Limpiar los campos de entrada
+            setNewQuestion(''); // Limpia el campo de la pregunta
+            setNewLevel('');     // Limpia el campo del nivel
+            setOptions([         // Reinicia las opciones con valores vacíos
+                { text: '', isCorrect: false },
+                { text: '', isCorrect: false },
+                { text: '', isCorrect: false },
+                { text: '', isCorrect: false }]);
         }
     };
 

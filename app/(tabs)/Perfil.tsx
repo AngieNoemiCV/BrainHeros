@@ -31,7 +31,7 @@ export default function Perfil() {
             />
 
             <Button
-                title="En caso de ser el Patron"
+                title="En caso de ser el Admin"
                 onPress={() => {
                     // Lógica para editar perfil
                     navigation.navigate('LoginPatron')

@@ -1,171 +1,167 @@
-import React, { useEffect, useState } from 'react';
-import { View,TextInput, Text, StyleSheet, TouchableOpacity, Image, Alert, SafeAreaView } from 'react-native';
-import { useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
-//import { initializeDatabase, actualizarNombre } from '@/database/db';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
+import { useNavigation } from '@react-navigation/native'; // Importar el hook de navegación
 
-// import * as SQLite from 'expo-sqlite'; 
-
-
-export default function index() {
+export default function LoginScreen() {
   const navigation = useNavigation();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState(''); // Para el registro
+  const [isRegistering, setIsRegistering] = useState(false); // Estado para cambiar entre login y registro
 
-  //DATABASE
-  // const db = await SQLite.openDatabaseAsync('DBrain.db');
-
-  // db.execAsync
-
-
+  // Verificar si hay una sesión abierta
   // useEffect(() => {
-  //   initializeDatabase(); // Call to initialize the database
+  //   const session = supabase.auth.session();
+  //   if (session) {
+  //     //navigation.navigate('Niveles'); // Si hay sesión, redirigir a la pantalla de niveles
+  //     console.log("Usuario logueado")
+  //   }
   // }, []);
 
+  // Función para manejar el registro de un nuevo usuario
+  const handleRegister = async () => {
+    const { user, error } = await supabase.auth.signUp(
+      { email, password },
+    );
 
+    if (error) {
+      Alert.alert('Error en el registro', error.message);
+    } else {
+      console.log("vamos a registrar Usuario")
+      // Insertar en la tabla Usuario
+      const { data, error: insertError } = await supabase
+        .from('usuario')
+        .insert([{ email, name }]);
 
-  // const handleSaveUsername = () => {
-  //   if (username.trim() === '') {
-  //     Alert.alert('Error', 'Por favor, ingresa un nombre de usuario.');
-  //     return;
-  //   }
-  //   actualizarNombre(username);
-  //   Alert.alert('Éxito', `Nombre de usuario "${username}" guardado.`);
-  //   setUsername(''); // Clear the input field
-  // };
+        if (insertError) {
+          Alert.alert('Error al insertar usuario', insertError.message);
+        } else {
+          //Alert.alert('Registro exitoso');
+          fillProgressTable(email); // Llamamos a la función para llenar ProgressTable
+        }
+        
+      Alert.alert('Registro exitoso');
+      handleLogin();
+    }
+  };
+
+  // Función para manejar el inicio de sesión
+  const handleLogin = async () => {
+    const { user, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      Alert.alert('Error en el inicio de sesión', error.message);
+    } else {
+      Alert.alert('Inicio de sesión exitoso');
+      navigation.navigate('Panel'); // Redirigir a la pantalla de niveles después del login
+    }
+  };
+
+  // Funcion para llenar la ProgressTable
+  const fillProgressTable = async (email) => {
+    try {
+      // Paso 1: Obtener todos los niveles de QuestionsTable
+      const { data: questions, error: questionsError } = await supabase
+        .from('QuestionsTable')
+        .select('level');
+  
+      if (questionsError) {
+        console.error('Error al obtener los niveles:', questionsError.message);
+        return;
+      }
+  
+      // Paso 2: Crear un Set para obtener niveles únicos
+      const uniqueLevels = Array.from(new Set(questions.map(q => q.level)));
+  
+      // Paso 3: Crear un array con los datos a insertar en ProgressTable
+      const progressEntries = uniqueLevels.map((level) => ({
+        email, // El correo del usuario como referencia
+        level_number: level, // El nivel obtenido de QuestionsTable
+        completed: false, // Inicialmente los niveles no están completados
+      }));
+  
+      // Paso 4: Insertar los datos en ProgressTable
+      const { error: insertError } = await supabase
+        .from('ProgressTable')
+        .insert(progressEntries);
+  
+      if (insertError) {
+        console.error('Error al llenar ProgressTable:', insertError.message);
+      } else {
+        console.log('ProgressTable llenada con éxito');
+      }
+    } catch (error) {
+      console.error('Error inesperado:', error.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
-      {/* Header con saludo */}
-      <View style={styles.header}>
-        <Text style={styles.greeting}>¡Hola, Usuario!</Text>
-        <Text style={styles.subHeader}>Bienvenido a tu panel de control</Text>
-      </View>
-      {/* Sección de progreso del usuario */}
-      <View style={styles.progressSection}>
-        <Text style={styles.progressTitle}>Progreso del usuario</Text>
-        {/* <Image 
-          source={require('@/assets/images/progress-bar.png')} 
-          style={styles.progressBar}
-        /> */}
-        <Text style={styles.progressText}>Nivel 3 de 10 completado</Text>
-      </View>
+      <Text style={styles.title}>{isRegistering ? 'Crear Cuenta' : 'Iniciar Sesión'}</Text>
 
+      {isRegistering && (
+        <TextInput
+          style={styles.input}
+          placeholder="Nombre"
+          value={name}
+          onChangeText={setName}
+        />
+      )}
 
-      <View style={styles.buttonsContainer}>
-        <Text style={styles.title}>Ingresar Us</Text>
-        <SafeAreaView>
-          <TextInput
-            style={styles.input}
-            placeholder="Escribe tu nombre"
-            onChangeText={setUsername}
-            value={username}
-          />
-        </SafeAreaView>
+      <TextInput
+        style={styles.input}
+        placeholder="Correo Electrónico"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+      />
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Administrador')}
-          // handleSaveUsername
-        >
-          <Text style={styles.buttonText}>Ir con la patrona</Text>
-        </TouchableOpacity>
+      <TextInput
+        style={styles.input}
+        placeholder="Contraseña"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
 
-      </View>
+      <Button
+        title={isRegistering ? 'Registrarse' : 'Iniciar Sesión'}
+        onPress={isRegistering ? handleRegister : handleLogin}
+      />
 
-
-
-
-
-
-      {/* Botones para navegar a las principales secciones */}
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Desafios')}
-        >
-          <Text style={styles.buttonText}>Niveles</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Desafios')}
-        >
-          <Text style={styles.buttonText}>Trofeos</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Desafios')}
-        >
-          <Text style={styles.buttonText}>Asesorías</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity onPress={() => setIsRegistering(!isRegistering)}>
+        <Text style={styles.switchText}>
+          {isRegistering ? '¿Ya tienes una cuenta? Inicia sesión' : '¿No tienes cuenta? Regístrate'}
+        </Text>
+      </TouchableOpacity>
     </View>
+
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
     padding: 20,
-  },
-  header: {
-    marginBottom: 30,
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#27613C',
-  },
-  subHeader: {
-    fontSize: 18,
-    color: '#707070',
-  },
-  progressSection: {
-    marginBottom: 40,
-    alignItems: 'center',
-  },
-  progressTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  progressBar: {
-    width: '80%',
-    height: 20,
-    backgroundColor: '#27613C',
-    marginBottom: 10,
-  },
-  progressText: {
-    fontSize: 16,
-    color: '#707070',
-  },
-  buttonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  button: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 15,
-    paddingHorizontal: 25,
-    borderRadius: 10,
-  },
-  buttonText: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    textAlign: 'center',
   },
   input: {
-    width: '100%',
-    padding: 10,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    marginBottom: 20,
+    padding: 10,
+    marginBottom: 15,
+  },
+  switchText: {
+    marginTop: 20,
+    textAlign: 'center',
+    color: '#27613C',
   },
 });
