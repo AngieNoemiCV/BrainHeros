@@ -2,9 +2,22 @@
 import React from 'react';
 import { View, Text, StyleSheet, Button } from 'react-native';
 import { useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
+import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
 
 export default function Perfil() {
     const navigation = useNavigation();
+
+
+    // Función para cerrar sesión (opcional)
+    const handleLogout = async () => {
+        const { error } = await supabase.auth.signOut();
+        if (!error) {
+            navigation.navigate('index'); // Redirigir al login al cerrar sesión
+        }
+        else{
+            console.log("op")
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -24,8 +37,7 @@ export default function Perfil() {
             <Button
                 title="Cerrar Sesión"
                 onPress={() => {
-                    // Lógica para cerrar sesión
-                    navigation.navigate('index'); // Navega a la pantalla de inicio de sesión
+                    handleLogout(); 
                 }}
                 color="red"
             />

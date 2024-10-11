@@ -18,13 +18,18 @@ export default function Niveles() {
 
   useFocusEffect(
     useCallback(() => {
+      checkSession();
       fetchNiveles(); // Llamamos a la función para obtener los datos cuando la pantalla está enfocada
     }, []),
   );
 
   // Verificar si hay una sesión abierta
   useEffect(() => {
-    const checkSession = async () => {
+    checkSession(); // Llamamos a la función para verificar la sesión
+  }, []);
+
+  const checkSession = async () => {
+    try {
       const { data: { session } } = await supabase.auth.getSession(); // Método correcto para obtener la sesión
       if (!session) {
         navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
@@ -32,10 +37,12 @@ export default function Niveles() {
         console.log("Usuario logueado");
         //console.log("Usuario logueado", session);
       }
-    };
+    } catch {
+      navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
+      return
+    }
 
-    checkSession(); // Llamamos a la función para verificar la sesión
-  }, []);
+  };
 
 
   const fetchNiveles = async () => {
@@ -43,7 +50,8 @@ export default function Niveles() {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError) {
-      console.error('Error al obtener el usuario:', userError.message);
+      navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
+      //console.error('Error al obtener el usuario:', userError.message);
       return; // Salimos si hay error
     }
 
