@@ -1,75 +1,139 @@
-import { useNavigation } from 'expo-router';
-import React, { useState } from 'react';
+import { useNavigation, useRoute } from '@react-navigation/native'; // Importamos useRoute para obtener los parámetros
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
 
-// Definimos la interfaz de un Desafío
-interface Desafio {
-  id: number;
-  pregunta: string;
-  opciones: string[];
-  respuestaCorrecta: string;
-}
-
-// Lista de desafíos (puedes reemplazar esta lista con datos dinámicos de una API o base de datos)
-const desafios: Desafio[] = [
-  {
-    id: 1,
-    pregunta: '¿Cuánto es 5 + 3?',
-    opciones: ['6', '7', '8', '9'],
-    respuestaCorrecta: '8',
-  },
-  {
-    id: 2,
-    pregunta: '¿Cuál es la capital de Francia?',
-    opciones: ['Madrid', 'París', 'Berlín', 'Roma'],
-    respuestaCorrecta: 'París',
-  },
-  {
-    id: 3,
-    pregunta: '¿Cuál es el planeta más cercano al sol?',
-    opciones: ['Tierra', 'Marte', 'Venus', 'Mercurio'],
-    respuestaCorrecta: 'Mercurio',
-  },
-  // Agrega más desafíos según sea necesario
-];
-
-export default function Desafios({ route }: any) {
-  const { nivelId } = 3; //route.params // Recibimos el nivelId desde la pantalla anterior
-  const [desafioActual, setDesafioActual] = useState(0); // Seguimiento del desafío actual
-  const [respuestaSeleccionada, setRespuestaSeleccionada] = useState<string | null>(null);
+export default function Desafios() {
+  const route = useRoute(); // Usamos useRoute para obtener los parámetros
   const navigation = useNavigation();
+  const { nivelId } = route.params; // Extraemos el nivelId de los parámetros
+  const [desafioActual, setDesafioActual] = useState(0);
+  const [desafios, setDesafios] = useState([]);
+  const [respuestaSeleccionada, setRespuestaSeleccionada] = useState<string | null>(null);
+
+  // Verificar si hay una sesión abierta
+  useEffect(() => {
+    setDesafioActual(0)
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession(); // Método correcto para obtener la sesión
+      if (!session) {
+        navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
+      } else {
+        console.log("Usuario logueado");
+        //console.log("Usuario logueado", session);
+      }
+    };
+
+    checkSession(); // Llamamos a la función para verificar la sesión
+  }, []);
+
+  // Obtener los desafíos del nivel actual desde la base de datos
+  useEffect(() => {
+    const fetchDesafios = async () => {
+      // Paso 1: Obtener las preguntas del nivel actual
+      const { data: preguntas, error: preguntasError } = await supabase
+        .from('QuestionsTable')
+        .select('id_question, question')
+        .eq('level', nivelId); // Filtramos por el nivel recibido en los parámetros
+
+      if (preguntasError) {
+        console.error('Error al obtener las preguntas:', preguntasError.message);
+        return;
+      }
+
+      // Paso 2: Obtener las opciones de cada pregunta
+      const preguntasConOpciones = await Promise.all(
+        preguntas.map(async (pregunta: any) => {
+          const { data: opciones, error: opcionesError } = await supabase
+            .from('OptionsTable')
+            .select('id_option, option_text, is_correct')
+            .eq('fk_id_question', pregunta.id_question); // Relacionar opciones con la pregunta por id_question
+
+          if (opcionesError) {
+            console.error('Error al obtener las opciones:', opcionesError.message);
+            return { ...pregunta, opciones: [] }; // En caso de error, regresar la pregunta sin opciones
+          }
+
+          // Retornamos la pregunta con las opciones correspondientes
+          return {
+            id: pregunta.id_question,
+            pregunta: pregunta.question,
+            opciones: opciones.map((opcion: any) => ({
+              id: opcion.id_option,
+              texto: opcion.option_text,
+              esCorrecta: opcion.is_correct,
+            })),
+          };
+        })
+      );
+
+      // Guardar los desafíos en el estado
+      setDesafios(preguntasConOpciones);
+    };
+
+    fetchDesafios();
+  }, [nivelId]);
 
   // Función para verificar la respuesta
-  const verificarRespuesta = () => {
+  const verificarRespuesta = async () => {
     const desafio = desafios[desafioActual];
-    if (desafioActual < desafios.length && respuestaSeleccionada === desafio.respuestaCorrecta) {
-      Alert.alert(
-        '¡Felicitaciones!',
-        'Has completado todos los desafíos de este nivel.',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.navigate('Niveles'), // Navegar después de presionar "OK"
-          },
-        ],
-      );
-      Alert.alert('¡Correcto!', 'Has respondido correctamente.');
-    }
+    const opcionCorrecta = desafio.opciones.find((opcion: any) => opcion.esCorrecta);
 
-    else if (respuestaSeleccionada === desafio.respuestaCorrecta) {
-      Alert.alert('¡Correcto!', 'Has respondido correctamente.');
+    if (respuestaSeleccionada === opcionCorrecta.texto) {
+      if (desafioActual < desafios.length - 1) {
+        Alert.alert('¡Correcto!', 'Has respondido correctamente.');
+        setDesafioActual(desafioActual + 1);
+        setRespuestaSeleccionada(null);
+      } else {
+        Alert.alert(
+          '¡Felicitaciones!',
+          'Has completado todos los desafíos de este nivel.',
+          [
+            {
+              text: 'OK',
+              onPress: async () => {
+                // Actualizamos la tabla ProgressTable para marcar el nivel como completado
+                const { data: session } = await supabase.auth.getSession(); // Obtener la sesión actual
+                const user = session?.session?.user;
+
+                //console.log(user)
+
+                if (user) {
+                  const { error: updateError } = await supabase
+                    .from('ProgressTable')
+                    .update({ completed: true }) // Marcamos el nivel como completado
+                    .eq('email', user.email) // Filtramos por el usuario actual
+                    .eq('level_number', nivelId); // Filtramos por el nivel actual
+
+                  if (updateError) {
+                    console.log('Error al actualizar el progreso:', updateError.message);
+                  } else {
+                    console.log('Progreso actualizado exitosamente');
+                    navigation.navigate('Niveles'); // Navegar a la pantalla de Niveles
+                  }
+                }
+                else {
+                  console.log("Ocurrio algo",Error)
+                }
+              },
+            },
+          ]
+        );
+        setDesafioActual(0);
+      }
     } else {
-      Alert.alert('Incorrecto', 'La respuesta correcta era: ' + desafio.respuestaCorrecta);
-    }
-
-    // Ir al siguiente desafío o finalizar
-    if (desafioActual < desafios.length - 1) {
-      setDesafioActual(desafioActual + 1);
-      setRespuestaSeleccionada(null); // Reseteamos la selección para el próximo desafío
+      Alert.alert('Incorrecto', 'La respuesta correcta era: ' + opcionCorrecta.texto);
     }
   };
 
-  // Obtener el desafío actual
+  if (desafios.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.nivelText}>Cargando desafíos...</Text>
+      </View>
+    );
+  }
+
   const desafio = desafios[desafioActual];
 
   return (
@@ -78,16 +142,16 @@ export default function Desafios({ route }: any) {
       <Text style={styles.pregunta}>{desafio.pregunta}</Text>
 
       {/* Opciones de respuesta */}
-      {desafio.opciones.map((opcion) => (
+      {desafio.opciones.map((opcion: any) => (
         <TouchableOpacity
-          key={opcion}
+          key={opcion.id}
           style={[
             styles.opcion,
-            respuestaSeleccionada === opcion ? styles.opcionSeleccionada : null,
+            respuestaSeleccionada === opcion.texto ? styles.opcionSeleccionada : null,
           ]}
-          onPress={() => setRespuestaSeleccionada(opcion)}
+          onPress={() => setRespuestaSeleccionada(opcion.texto)}
         >
-          <Text style={styles.opcionTexto}>{opcion}</Text>
+          <Text style={styles.opcionTexto}>{opcion.texto}</Text>
         </TouchableOpacity>
       ))}
 
@@ -95,7 +159,7 @@ export default function Desafios({ route }: any) {
       <TouchableOpacity
         style={styles.botonEnviar}
         onPress={verificarRespuesta}
-        disabled={respuestaSeleccionada === null} // Deshabilitar si no se ha seleccionado una respuesta
+        disabled={respuestaSeleccionada === null}
       >
         <Text style={styles.botonTexto}>Enviar Respuesta</Text>
       </TouchableOpacity>

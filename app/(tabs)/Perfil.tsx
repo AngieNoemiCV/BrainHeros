@@ -25,7 +25,7 @@ export default function Perfil() {
                 title="Cerrar Sesión"
                 onPress={() => {
                     // Lógica para cerrar sesión
-                    navigation.navigate('Login'); // Navega a la pantalla de inicio de sesión
+                    navigation.navigate('index'); // Navega a la pantalla de inicio de sesión
                 }}
                 color="red"
             />

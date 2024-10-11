@@ -1,39 +1,100 @@
 import React, { useEffect, useState } from 'react';
-import { View,TextInput, Text, StyleSheet, TouchableOpacity, Image, Alert, SafeAreaView } from 'react-native';
-import { useNavigation } from '@react-navigation/native'; 
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
+import { useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
 
-export default function index() {
+export default function Panel() {
+  const [usuario, setUsuario] = useState<any>(null); // Estado para almacenar información del usuario
+  const [progreso, setProgreso] = useState<any>(null); // Estado para almacenar el progreso del usuario
   const navigation = useNavigation();
-  const [username, setUsername] = useState('');
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession(); // Método correcto para obtener la sesión
+      if (!session) {
+        navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
+      } else {
+        //console.log("Usuario logueado", session);
+      }
+    };
+
+    checkSession(); // Llamamos a la función para verificar la sesión
+  }, []);
+
+   // Obtener los detalles del usuario logueado y su progreso
+  useEffect(() => {
+    const fetchUsuarioYProgreso = async () => {
+      // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
+      const { data: session, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error('Error al obtener la sesión:', sessionError.message);
+        return;
+      }
+
+      const user = session?.session?.user;
+
+      if (user) {
+        // Paso 2: Consultar la tabla Usuario para obtener el nombre
+        const { data: userData, error: userError } = await supabase
+          .from('usuario')
+          .select('name')
+          .eq('email', user.email)
+          .single(); // Usamos single() ya que solo esperamos un único resultado
+
+        if (userError) {
+          console.error('Error al obtener el nombre del usuario:', userError.message);
+          return;
+        }
+
+        setUsuario({ email: user.email, name: userData?.name });
+
+        // Paso 3: Obtenemos el progreso del usuario desde la tabla ProgressTable
+        const { data: progressData, error: progressError } = await supabase
+          .from('ProgressTable')
+          .select('level_number, completed')
+          .eq('email', user.email); // Filtramos por el email del usuario actual
+
+        if (progressError) {
+          console.error('Error al obtener el progreso:', progressError.message);
+        } else {
+          setProgreso(progressData); // Guardamos el progreso en el estado
+        }
+      }
+    };
+
+    fetchUsuarioYProgreso();
+  }, []);
+
+  // Si el usuario o el progreso no están listos, mostramos un mensaje de carga
+  if (!usuario || !progreso) {
+    return (
+      <View style={styles.container}>
+        <Text>Cargando datos...</Text>
+      </View>
+    );
+  }
+
+  // Calculamos el progreso actual. Esto depende de la estructura de tu base de datos.
+  // Por ejemplo, aquí asumimos que `progreso` es un array con varios niveles.
+  const nivelesCompletados = progreso.filter((nivel: any) => nivel.completed).length;
+  const totalNiveles = progreso.length;
 
   return (
     <View style={styles.container}>
       {/* Header con saludo */}
       <View style={styles.header}>
-        <Text style={styles.greeting}>¡Hola, Usuario!</Text>
+        <Text style={styles.greeting}>¡Hola {usuario.name || usuario.email}!</Text>
         <Text style={styles.subHeader}>Bienvenido a tu panel de control</Text>
       </View>
+
       {/* Sección de progreso del usuario */}
       <View style={styles.progressSection}>
         <Text style={styles.progressTitle}>Progreso del usuario</Text>
-        {/* <Image 
-          source={require('@/assets/images/progress-bar.png')} 
-          style={styles.progressBar}
-        /> */}
-        <Text style={styles.progressText}>Nivel 3 de 10 completado</Text>
+        <Text style={styles.progressText}>
+          Nivel {nivelesCompletados} de {totalNiveles} completado
+        </Text>
       </View>
-
-
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Administrador')}
-          // handleSaveUsername
-        >
-          <Text style={styles.buttonText}>Ir con la patrona</Text>
-        </TouchableOpacity>
-      </View>
-
 
       {/* Botones para navegar a las principales secciones */}
       <View style={styles.buttonsContainer}>
@@ -50,13 +111,6 @@ export default function index() {
         >
           <Text style={styles.buttonText}>Trofeos</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Desafios')}
-        >
-          <Text style={styles.buttonText}>Asesorías</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -65,39 +119,40 @@ export default function index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
     padding: 20,
+    backgroundColor: '#f8f8f8',
+    justifyContent: 'center',
   },
   header: {
-    marginBottom: 30,
+    marginBottom: 20,
   },
   greeting: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#27613C',
+    textAlign: 'center',
   },
   subHeader: {
     fontSize: 18,
-    color: '#707070',
+    color: '#555',
+    textAlign: 'center',
   },
   progressSection: {
-    marginBottom: 40,
-    alignItems: 'center',
+    marginTop: 30,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    elevation: 2,
   },
   progressTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
-  },
-  progressBar: {
-    width: '80%',
-    height: 20,
-    backgroundColor: '#27613C',
-    marginBottom: 10,
+    color: '#27613C',
   },
   progressText: {
-    fontSize: 16,
-    color: '#707070',
+    fontSize: 18,
+    color: '#333',
   },
   buttonsContainer: {
     flexDirection: 'row',
@@ -114,17 +169,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  input: {
-    width: '100%',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    marginBottom: 20,
-  },
+
 });

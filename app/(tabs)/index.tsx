@@ -11,13 +11,13 @@ export default function LoginScreen() {
   const [isRegistering, setIsRegistering] = useState(false); // Estado para cambiar entre login y registro
 
   // Verificar si hay una sesión abierta
-  // useEffect(() => {
-  //   const session = supabase.auth.session();
-  //   if (session) {
-  //     //navigation.navigate('Niveles'); // Si hay sesión, redirigir a la pantalla de niveles
-  //     console.log("Usuario logueado")
-  //   }
-  // }, []);
+  useEffect(() => {
+    const session = supabase.auth.getSession();
+    if (session) {
+      navigation.navigate('Panel'); // Si hay sesión, redirigir a la pantalla de niveles
+      console.log("Usuario logueado")
+    }
+  }, []);
 
   // Función para manejar el registro de un nuevo usuario
   const handleRegister = async () => {

@@ -1,15 +1,18 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Button, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { supabase } from '@/database/supabase.js'; // Import Supabase client
-import { useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
+import { useFocusEffect, useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
 
 export default function Dashboard() {
   const navigation = useNavigation();
   const [questions, setQuestions] = useState([]);
-  const [newQuestion, setNewQuestion] = useState('');
-  const [newLevel, setNewLevel] = useState('');
-  const [options, setOptions] = useState([{ text: '', isCorrect: false }, { text: '', isCorrect: false }, { text: '', isCorrect: false }, { text: '', isCorrect: false }]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchQuestions(); // Llamamos a la función para obtener los datos cuando la pantalla está enfocada
+    }, []),
+  );
 
   useEffect(() => {
     fetchQuestions(); // Fetch questions when the component loads
@@ -53,6 +56,8 @@ export default function Dashboard() {
       Alert.alert('Eliminado correctamente');
     }
   };
+
+
 
   return (
     <View style={styles.container}>
