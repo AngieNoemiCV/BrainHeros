@@ -1,27 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
 import { useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
+import { useFocusEffect } from 'expo-router';
 
 export default function Panel() {
   const [usuario, setUsuario] = useState<any>(null); // Estado para almacenar información del usuario
   const [progreso, setProgreso] = useState<any>(null); // Estado para almacenar el progreso del usuario
   const navigation = useNavigation();
 
-  useEffect(() => {
-    const checkSession = async () => {
+
+  useFocusEffect(
+    useCallback(() => {
+      checkSession(); // Verificar si hay una sesión abierta
+    }, []),
+  );
+
+  const checkSession = async () => {
+    try {
       const { data: { session } } = await supabase.auth.getSession(); // Método correcto para obtener la sesión
       if (!session) {
         navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
       } else {
+        //console.log("Usuario logueado");
         //console.log("Usuario logueado", session);
       }
-    };
+    } catch {
+      navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
+      return
+    }
+  };
 
-    checkSession(); // Llamamos a la función para verificar la sesión
-  }, []);
-
-   // Obtener los detalles del usuario logueado y su progreso
+  // Obtener los detalles del usuario logueado y su progreso
   useEffect(() => {
     const fetchUsuarioYProgreso = async () => {
       // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
@@ -40,7 +50,7 @@ export default function Panel() {
           .from('usuario')
           .select('name')
           .eq('email', user.email)
-          .single(); // Usamos single() ya que solo esperamos un único resultado
+          .single(); // Usamos single ya que solo esperamos un único resultado
 
         if (userError) {
           console.error('Error al obtener el nombre del usuario:', userError.message);
@@ -100,14 +110,14 @@ export default function Panel() {
       <View style={styles.buttonsContainer}>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('Desafios')}
+          onPress={() => navigation.navigate('Niveles')}
         >
           <Text style={styles.buttonText}>Niveles</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('Trofeso')}
+          onPress={() => navigation.navigate('Trofeos')}
         >
           <Text style={styles.buttonText}>Trofeos</Text>
         </TouchableOpacity>
@@ -157,6 +167,7 @@ const styles = StyleSheet.create({
   buttonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    top: 20,
   },
   button: {
     backgroundColor: '#4CAF50',

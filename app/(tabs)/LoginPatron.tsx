@@ -1,11 +1,19 @@
 // LoginScreen.tsx
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router';
 
 export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const navigation = useNavigation();
+
+  useFocusEffect(
+    useCallback(() => {
+      setPassword(''); // Verificar si hay una sesión abierta
+    }, []),
+  );
+
 
   // Función para validar la contraseña
   const handleLogin = () => {
@@ -20,7 +28,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Inicio de Sesión</Text>
+      <Text style={styles.title}>Inicio de Sesión Admin</Text>
       <TextInput
         secureTextEntry
         style={styles.input}

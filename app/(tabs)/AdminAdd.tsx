@@ -108,7 +108,7 @@ export default function Dashboard() {
                 {options.map((option, index) => (
                     <View key={index} style={styles.optionContainer}>
                         <TextInput
-                            style={styles.input}
+                            style={styles.inputOptions}
                             placeholder={`Opción ${index + 1}`}
                             value={option.text}
                             onChangeText={(text) => {
@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
+        backgroundColor: '#fff',
     },
     title: {
         fontSize: 24,
@@ -152,6 +153,14 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     input: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        padding: 10,
+        marginBottom: 10,
+    },
+    inputOptions: {
+        width: 150,
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 5,
@@ -191,6 +200,7 @@ const styles = StyleSheet.create({
         marginLeft: 10,
     },
     button: {
+        marginBottom: 15,
         backgroundColor: '#4CAF50',
         paddingVertical: 15,
         paddingHorizontal: 25,

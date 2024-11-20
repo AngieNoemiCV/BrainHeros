@@ -1,112 +1,56 @@
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
 
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Button, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { supabase } from '@/database/supabase.js'; // Import Supabase client
-import { useFocusEffect, useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
-
-export default function Dashboard() {
+export default function AdminDashboard() {
   const navigation = useNavigation();
-  const [questions, setQuestions] = useState([]);
+  const [usuario, setUsuario] = useState<any>(null); // Estado para almacenar información del usuario
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchQuestions(); // Llamamos a la función para obtener los datos cuando la pantalla está enfocada
-    }, []),
-  );
-
+  // Obtener los detalles del usuario logueado y su progreso
   useEffect(() => {
-    fetchQuestions(); // Fetch questions when the component loads
+    const fetchUsuario = async () => {
+        // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
+        const { data: session, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+            console.error('Error al obtener la sesión:', sessionError.message);
+            return;
+        }
+        const user = session?.session?.user;
+        if (user) {
+            // Paso 2: Consultar la tabla Usuario para obtener el nombre
+            const { data: userData, error: userError } = await supabase
+                .from('usuario')
+                .select('name, is_admin')
+                .eq('email', user.email)
+                .single(); // Usamos single ya que solo esperamos un único resultado
+            if (userError) {
+                console.error('Error al obtener el nombre del usuario:', userError.message);
+                return;
+            }
+            setUsuario({ email: user.email, name: userData?.name, role: userData?.is_admin});
+        }
+    };
+    fetchUsuario(); 
   }, []);
-
-  // Fetch all questions and options from Supabase
-  const fetchQuestions = async () => {
-    const { data, error } = await supabase
-      .from('QuestionsTable')
-      .select('id_question, question, level, OptionsTable(id_option, option_text, is_correct)');
-
-    if (error) {
-      console.error('Error fetching questions:', error);
-    } else {
-      setQuestions(data);
-    }
-  };
-
-
-  // Delete a question
-  const deleteQuestion = async (fk_id_question) => {
-    const { error: optionsError } = await supabase
-      .from('OptionsTable')
-      .delete()
-      .eq('fk_id_question', fk_id_question);
-
-    if (optionsError) {
-      console.error('Error deleting options:', optionsError);
-      return;
-    }
-
-    const { error: questionError } = await supabase
-      .from('QuestionsTable')
-      .delete()
-      .eq('id_question', fk_id_question);
-
-    if (questionError) {
-      console.error('Error deleting question:', questionError);
-    } else {
-      fetchQuestions(); // Refresh the list after deletion
-      Alert.alert('Eliminado correctamente');
-    }
-  };
-
-
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bienvenida Angie e</Text>
+      <Text style={styles.title}>Bienvenido, {usuario?.name}</Text>
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('AdminAdd')}
-      // handleSaveUsername
+        onPress={() => navigation.navigate('AdminPreguntas')}
       >
-        <Text style={styles.buttonText}>Agregar Pregunta</Text>
+        <Text style={styles.buttonText}>Administrar Preguntas</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('index')}
-      // handleSaveUsername
+        onPress={() => navigation.navigate('AdminUsuarios')}
       >
-        <Text style={styles.buttonText}>Volver al inicio</Text>
+        <Text style={styles.buttonText}>Administrar Usuarios</Text>
       </TouchableOpacity>
-
-
-
-      {/* List of questions grouped by levels */}
-      <FlatList
-        data={questions}
-        keyExtractor={(item) => item.id_question.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.questionContainer}>
-            <Text style={styles.questionText}>
-              Nivel {item.level}: {item.question}
-            </Text>
-
-            {/* Display options */}
-            {item.options && item.options.map((option) => (
-              <Text key={option.id_option} style={styles.optionText}>
-                - {option.option_text} {option.is_correct ? '(Correcta)' : ''}
-              </Text>
-            ))}
-
-            {/* Delete button */}
-            <Button
-              title="Eliminar Pregunta"
-              onPress={() => deleteQuestion(item.id_question)}
-              color="red"
-            />
-          </View>
-        )}
-      />
     </View>
   );
 }
@@ -114,59 +58,24 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
     padding: 20,
   },
   title: {
     fontSize: 24,
-    marginBottom: 20,
-  },
-  form: {
-    marginBottom: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-  },
-  optionContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  checkbox: {
-    padding: 10,
-    marginLeft: 10,
-  },
-  checkboxChecked: {
-    backgroundColor: '#27613C',
-  },
-  checkboxUnchecked: {
-    backgroundColor: '#ccc',
-  },
-  checkboxText: {
-    color: '#fff',
-  },
-  questionContainer: {
-    marginBottom: 20,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-  },
-  questionText: {
-    fontSize: 18,
-    marginBottom: 10,
-  },
-  optionText: {
-    fontSize: 16,
-    marginLeft: 10,
+    fontWeight: 'bold',
+    marginBottom: 30,
   },
   button: {
     backgroundColor: '#4CAF50',
     paddingVertical: 15,
     paddingHorizontal: 25,
     borderRadius: 10,
+    marginBottom: 15,
+    width: '80%',
+    alignItems: 'center',
   },
   buttonText: {
     fontSize: 16,

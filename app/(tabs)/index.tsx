@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
 import { useNavigation } from '@react-navigation/native'; // Importar el hook de navegación
+import { useFocusEffect } from 'expo-router';
 
 export default function LoginScreen() {
   const navigation = useNavigation();
@@ -10,20 +11,37 @@ export default function LoginScreen() {
   const [name, setName] = useState(''); // Para el registro
   const [isRegistering, setIsRegistering] = useState(false); // Estado para cambiar entre login y registro
 
-  // Verificar si hay una sesión abierta
-  useEffect(() => {
-    const session = supabase.auth.getSession();
-    if (session) {
-      navigation.navigate('Panel'); // Si hay sesión, redirigir a la pantalla de niveles
-      console.log("Usuario logueado")
+  useFocusEffect(
+    useCallback(() => {
+      checkSession(); // Verificar si hay una sesión abierta
+      setPassword(''),
+      setName(''),
+      setEmail('')
+    }, []),
+  );
+
+  const checkSession = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession(); // Método correcto para obtener la sesión
+      if (session) {
+        navigation.navigate('Panel'); // Navegar a la pantalla de inicio de sesión
+      } else {
+        //console.log("Usuario logueado");
+        //console.log("Usuario logueado", session);
+      }
+    } catch {
+      navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
+      return
     }
-  }, []);
+  };
 
   // Función para manejar el registro de un nuevo usuario
   const handleRegister = async () => {
     const { user, error } = await supabase.auth.signUp(
       { email, password },
     );
+
+    const is_admin = false
 
     if (error) {
       Alert.alert('Error en el registro', error.message);
@@ -32,7 +50,7 @@ export default function LoginScreen() {
       // Insertar en la tabla Usuario
       const { data, error: insertError } = await supabase
         .from('usuario')
-        .insert([{ email, name }]);
+        .insert([{ email, name, is_admin}]);
 
         if (insertError) {
           Alert.alert('Error al insertar usuario', insertError.message);
@@ -40,7 +58,7 @@ export default function LoginScreen() {
           //Alert.alert('Registro exitoso');
           fillProgressTable(email); // Llamamos a la función para llenar ProgressTable
         }
-        
+      console.log("Registro exitoso")
       Alert.alert('Registro exitoso');
       handleLogin();
     }
@@ -145,6 +163,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     justifyContent: 'center',
+    backgroundColor: '#fff',
   },
   title: {
     fontSize: 24,

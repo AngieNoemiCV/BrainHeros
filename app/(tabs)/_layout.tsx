@@ -11,7 +11,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: Colors['light'].tint,
         headerShown: false,
       }}>
       <Tabs.Screen
@@ -95,6 +95,14 @@ export default function TabLayout() {
 
       <Tabs.Screen
         name="index"
+        options={{
+          href: null,
+          title: 'Presentacion',
+        }}
+      />
+
+      <Tabs.Screen
+        name="EditPregunta"
         options={{
           href: null,
           title: 'Presentacion',

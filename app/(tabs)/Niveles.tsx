@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ProgressViewIOS, ProgressBarAndroid, Platform } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
 import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
 import { useFocusEffect } from 'expo-router';
@@ -18,15 +18,10 @@ export default function Niveles() {
 
   useFocusEffect(
     useCallback(() => {
-      checkSession();
+      checkSession(); // Verificar si hay una sesión abierta
       fetchNiveles(); // Llamamos a la función para obtener los datos cuando la pantalla está enfocada
     }, []),
   );
-
-  // Verificar si hay una sesión abierta
-  useEffect(() => {
-    checkSession(); // Llamamos a la función para verificar la sesión
-  }, []);
 
   const checkSession = async () => {
     try {
@@ -34,14 +29,13 @@ export default function Niveles() {
       if (!session) {
         navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
       } else {
-        console.log("Usuario logueado");
+        //console.log("Usuario logueado");
         //console.log("Usuario logueado", session);
       }
     } catch {
       navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
       return
     }
-
   };
 
 

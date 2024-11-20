@@ -1,12 +1,57 @@
-// Perfil.tsx
-import React from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
-import { useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Button, TouchableOpacity } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
 import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
 
 export default function Perfil() {
+    const [usuario, setUsuario] = useState<any>(null); // Estado para almacenar información del usuario
+
+    useFocusEffect(
+        useCallback(() => {
+            checkSession();
+        }, []),
+    );
+
+    // Obtener los detalles del usuario logueado y su progreso
+    useEffect(() => {
+        const fetchUsuario = async () => {
+            // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
+            const { data: session, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError) {
+                console.error('Error al obtener la sesión:', sessionError.message);
+                return;
+            }
+            const user = session?.session?.user;
+            if (user) {
+                // Paso 2: Consultar la tabla Usuario para obtener el nombre
+                const { data: userData, error: userError } = await supabase
+                    .from('usuario')
+                    .select('name, is_admin')
+                    .eq('email', user.email)
+                    .single(); // Usamos single ya que solo esperamos un único resultado
+                if (userError) {
+                    console.error('Error al obtener el nombre del usuario:', userError.message);
+                    return;
+                }
+                setUsuario({ email: user.email, name: userData?.name, role: userData?.is_admin});
+            }
+        };
+        fetchUsuario();
+    }, []);
+
     const navigation = useNavigation();
 
+    const checkSession = async () => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession(); // Método correcto para obtener la sesión
+            if (!session) {
+                navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
+            }
+        } catch {
+            navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
+            return;
+        }
+    };
 
     // Función para cerrar sesión (opcional)
     const handleLogout = async () => {
@@ -14,41 +59,42 @@ export default function Perfil() {
         if (!error) {
             navigation.navigate('index'); // Redirigir al login al cerrar sesión
         }
-        else{
-            console.log("op")
-        }
     };
+
+    //Funcion para usar si eres admin
+    const handleAdminNavigation = () => {
+        if (usuario?.is_admin) {
+          navigation.navigate('Administrador');
+        } else {
+          alert('No tienes permisos para acceder a esta pantalla.' + usuario.name);
+        }
+      };
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Perfil del Usuario</Text>
-            {/* Aquí puedes agregar la información del perfil, como el nombre del usuario, su foto, etc. */}
-            <Text style={styles.info}>Nombre: Usuario Ejemplo</Text>
-            <Text style={styles.info}>Email: usuario@ejemplo.com</Text>
+            <View style={styles.userInfoContainer}>
+                <Text style={styles.infoLabel}>Nombre:</Text>
+                <Text style={styles.infoValue}>{usuario?.name}</Text>
+            </View>
+            <View style={styles.userInfoContainer}>
+                <Text style={styles.infoLabel}>Email:</Text>
+                <Text style={styles.infoValue}>{usuario?.email}</Text>
+            </View>
 
-            {/* Botón para navegar a otra pantalla si es necesario */}
-            <Button
-                title="Editar Perfil"
-                onPress={() => {
-                    // Lógica para editar perfil
-                }}
-            />
+            <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleLogout}
+            >
+                <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
+            </TouchableOpacity>
 
-            <Button
-                title="Cerrar Sesión"
-                onPress={() => {
-                    handleLogout(); 
-                }}
-                color="red"
-            />
-
-            <Button
-                title="En caso de ser el Admin"
-                onPress={() => {
-                    // Lógica para editar perfil
-                    navigation.navigate('LoginPatron')
-                }}
-            />
+            <TouchableOpacity
+                style={styles.adminButton}
+                onPress={handleAdminNavigation}
+            >
+                <Text style={styles.adminButtonText}>En caso de ser el Admin</Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -58,15 +104,56 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#f8f9fa',
+        padding: 20,
     },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
-        marginBottom: 20,
+        color: '#27613C',
+        marginBottom: 30,
     },
-    info: {
+    userInfoContainer: {
+        flexDirection: 'row',
+        marginBottom: 15,
+        width: '100%',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ccc',
+        paddingBottom: 10,
+    },
+    infoLabel: {
         fontSize: 18,
-        marginBottom: 10,
+        fontWeight: '600',
+        color: '#333',
+    },
+    infoValue: {
+        fontSize: 18,
+        color: '#555',
+    },
+    logoutButton: {
+        backgroundColor: '#FF6B6B',
+        paddingVertical: 15,
+        paddingHorizontal: 40,
+        borderRadius: 8,
+        marginTop: 40,
+    },
+    logoutButtonText: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#fff',
+    },
+    adminButton: {
+        backgroundColor: '#1D3D47',
+        paddingVertical: 15,
+        paddingHorizontal: 40,
+        borderRadius: 8,
+        marginTop: 20,
+    },
+    adminButtonText: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#fff',
     },
 });
