@@ -8,36 +8,39 @@ export default function Perfil() {
 
     useFocusEffect(
         useCallback(() => {
+            fetchUsuario();
             checkSession();
         }, []),
     );
 
     // Obtener los detalles del usuario logueado y su progreso
-    useEffect(() => {
-        const fetchUsuario = async () => {
-            // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
-            const { data: session, error: sessionError } = await supabase.auth.getSession();
-            if (sessionError) {
-                console.error('Error al obtener la sesión:', sessionError.message);
+    // useEffect(() => {
+    //     fetchUsuario();
+    // }, []);
+
+    const fetchUsuario = async () => {
+        // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
+        const { data: session, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+            console.error('Error al obtener la sesión:', sessionError.message);
+            return;
+        }
+        const user = session?.session?.user;
+        if (user) {
+            // Paso 2: Consultar la tabla Usuario para obtener el nombre
+            const { data: userData, error: userError } = await supabase
+                .from('usuario')
+                .select('name, is_admin')
+                .eq('email', user.email)
+                .single(); // Usamos single ya que solo esperamos un único resultado
+            if (userError) {
+                console.error('Error al obtener el nombre del usuario:', userError.message);
                 return;
             }
-            const user = session?.session?.user;
-            if (user) {
-                // Paso 2: Consultar la tabla Usuario para obtener el nombre
-                const { data: userData, error: userError } = await supabase
-                    .from('usuario')
-                    .select('name, is_admin')
-                    .eq('email', user.email)
-                    .single(); // Usamos single ya que solo esperamos un único resultado
-                if (userError) {
-                    console.error('Error al obtener el nombre del usuario:', userError.message);
-                    return;
-                }
-                setUsuario({ email: user.email, name: userData?.name, role: userData?.is_admin});
-            }
-        };
-        fetchUsuario();
-    }, []);
+            setUsuario({ email: user.email, name: userData?.name, role: userData?.is_admin});
+        }
+    };
+    // fetchUsuario();
 
     const navigation = useNavigation();
 
@@ -59,6 +62,9 @@ export default function Perfil() {
         if (!error) {
             navigation.navigate('index'); // Redirigir al login al cerrar sesión
         }
+        else {
+            navigation.navigate('index'); // Redirigir al login al cerrar sesión
+        }
     };
 
     //Funcion para usar si eres admin
@@ -66,7 +72,7 @@ export default function Perfil() {
         if (usuario?.is_admin) {
           navigation.navigate('Administrador');
         } else {
-          alert('No tienes permisos para acceder a esta pantalla.' + usuario.name);
+          alert('No tienes permisos para acceder a esta pantalla ' + usuario.name);
         }
       };
 

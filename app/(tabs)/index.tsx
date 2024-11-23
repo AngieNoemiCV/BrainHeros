@@ -30,7 +30,7 @@ export default function LoginScreen() {
         //console.log("Usuario logueado", session);
       }
     } catch {
-      navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
+      // navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
       return
     }
   };

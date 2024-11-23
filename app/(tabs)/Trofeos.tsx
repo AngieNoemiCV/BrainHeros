@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { supabase } from '@/database/supabase'; // Asegúrate de que está configurado correctamente
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useNavigation } from 'expo-router';
 
 export default function Trofeos() {
 
@@ -10,6 +10,8 @@ export default function Trofeos() {
       checkSession(); // Verificar si hay una sesión abierta
     }, []),
   );
+
+  const navigation = useNavigation();
 
   const checkSession = async () => {
     try {

@@ -7,6 +7,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native'; // Imp
 export default function Dashboard() {
   const navigation = useNavigation();
   const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
 
   useFocusEffect(
     useCallback(() => {
@@ -20,30 +22,35 @@ export default function Dashboard() {
 
   // Fetch all questions and options from Supabase
   const fetchQuestions = async () => {
+    // setLoading(false);
     const { data, error } = await supabase
       .from('QuestionsTable')
       .select('id_question, question, level, OptionsTable(id_option, option_text, is_correct)');
-
+    //  setLoading(false);
     if (error) {
       console.error('Error fetching questions:', error);
+
     } else {
       setQuestions(data);
+    //  setLoading(false);
     }
   };
 
   // Resetear todo el progreso a falso
-  const resetProgress = async () => {
-    const { error } = await supabase
-      .from('ProgressTable')
-      .update({ completed: false }); // Actualizamos la columna 'completed' a false para todas las filas
+  // const resetProgress = async () => {
+  //   console.error("hi")
+  //   const { error } = await supabase
+  //     .from('ProgressTable')
+  //     .update({ completed: false }); // Actualizamos la columna 'completed' a false para todas las filas
+  //     console.error("hi2")
 
-    if (error) {
-      console.error('Error al reiniciar el progreso:', error.message);
-      Alert.alert('Error', 'No se pudo reiniciar el progreso.');
-    } else {
-      Alert.alert('Progreso reiniciado', 'Todos los registros se han actualizado correctamente.');
-    }
-  };
+  //   if (error) {
+  //     console.error('Error al reiniciar el progreso:', error.message);
+  //     Alert.alert('Error', 'No se pudo reiniciar el progreso.');
+  //   } else {
+  //     Alert.alert('Progreso reiniciado', 'Todos los registros se han actualizado correctamente.');
+  //   }
+  // };
 
 
   // Delete a question
@@ -101,48 +108,53 @@ export default function Dashboard() {
         <Text style={styles.buttonText}>Volver al inicio</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.button}
         onPress={resetProgress}
       >
         <Text style={styles.buttonText}>Reiniciar Progreso</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
 
 
       {/* List of questions grouped by levels */}
-      <FlatList
-        data={questions}
-        keyExtractor={(item) => item.id_question.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.questionContainer}>
-            <Text style={styles.questionText}>
-              Nivel {item.level}: {item.question}
-            </Text>
 
-            {/* Display options */}
-            {item.options && item.options.map((option) => (
-              <Text key={option.id_option} style={styles.optionText}>
-                - {option.option_text} {option.is_correct ? '(Correcta)' : ''}
+      {loading ? (
+        <Text style={styles.loading}>Cargando...</Text>
+      ) : (
+        <FlatList
+          data={questions}
+          keyExtractor={(item) => item.id_question.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.questionContainer}>
+              <Text style={styles.questionText}>
+                Nivel {item.level}: {item.question}
               </Text>
-            ))}
 
-            {/* Delete button */}
-            <Button
-              title="Eliminar Pregunta"
-              onPress={() => deleteQuestion(item.id_question)}
-              color="red"
-            />
+              {/* Display options */}
+              {item.options && item.options.map((option) => (
+                <Text key={option.id_option} style={styles.optionText}>
+                  - {option.option_text} {option.is_correct ? '(Correcta)' : ''}
+                </Text>
+              ))}
 
-            <Button
-              title="Editar Pregunta"
-              onPress={() => navigation.navigate('EditPregunta', { questionId: item.id_question })}
-              color="blue"
-            />            
+              {/* Delete button */}
+              <Button
+                title="Eliminar Pregunta"
+                onPress={() => deleteQuestion(item.id_question)}
+                color="red"
+              />
 
-          </View>
-        )}
-      />
+              <Button
+                title="Editar Pregunta"
+                onPress={() => navigation.navigate('EditPregunta', { questionId: item.id_question })}
+                color="blue"
+              />
+
+            </View>
+          )}
+        />
+      )}
     </View>
   );
 }

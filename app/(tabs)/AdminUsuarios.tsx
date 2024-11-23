@@ -23,22 +23,50 @@ export default function AdministrarUsuarios() {
 
     const fetchUsuarios = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('usuario') // Cambia al nombre de tu tabla
-            .select('email, name, is_admin, ProgressTable(level_number, completed)');
-
-        if (error) {
-            console.error('Error fetching users:', error);
-            Alert.alert('Error al cargar los usuarios.');
-        } else {
-            setUsuarios(data);
+    
+        try {
+            // Obtener el usuario logueado
+            const { data: loggedInUser, error: userError } = await supabase.auth.getUser();
+    
+            if (userError) {
+                console.error('Error :', userError);
+                Alert.alert('Error al cargar el usuario logueado.');
+                setLoading(false);
+                return;
+            }
+    
+            const loggedInEmail = loggedInUser?.user?.email;
+    
+            if (!loggedInEmail) {
+                console.error('Error: email no econtrado');
+                Alert.alert('No se encontró el email del usuario logueado.');
+                setLoading(false);
+                return;
+            }
+    
+            // Obtener todos los usuarios excepto el logueado
+            const { data, error } = await supabase
+                .from('usuario')
+                .select('email, name, is_admin, ProgressTable(level_number, completed)')
+                .neq('email', loggedInEmail); // Filtrar por email
+    
+            if (error) {
+                console.error('Error fetching users:', error);
+                Alert.alert('Error al cargar los usuarios.');
+            } else {
+                setUsuarios(data);
+            }
+        } catch (error) {
+            console.error('Error en fetchUsuarios:', error);
+            Alert.alert('Ocurrió un error al cargar los usuarios.');
         }
+    
         setLoading(false);
     };
 
     const openEditModal = (usuario) => {
         setSelectedUsuario(usuario);
-        setEditedNombre(usuario.nombre);
+        setEditedNombre(usuario.name);
         setEditedEmail(usuario.email);
         setEditModalVisible(true);
     };
@@ -273,6 +301,7 @@ export default function AdministrarUsuarios() {
                                 value={editedEmail}
                                 onChangeText={setEditedEmail}
                                 placeholder="Correo Electrónico"
+                                editable= {false}
                             />
                             <View style={styles.buttonContainer}>
                                 <TouchableOpacity
@@ -338,11 +367,14 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         padding: 20,
         top: 50,
+        alignItems: 'center',
+
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 20,
+        textAlign: 'center',
     },
     loading: {
         fontSize: 18,
@@ -389,6 +421,8 @@ const styles = StyleSheet.create({
         width: '45%',
         marginBottom: 10,
         alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
     },
     deleteButton: {
         backgroundColor: '#E53935',
@@ -396,6 +430,8 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontWeight: 'bold',
+        justifyContent: 'center',
+
     },
 
     modalContainer: {

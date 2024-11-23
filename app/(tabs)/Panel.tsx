@@ -13,6 +13,7 @@ export default function Panel() {
   useFocusEffect(
     useCallback(() => {
       checkSession(); // Verificar si hay una sesión abierta
+      fetchUsuarioYProgreso();
     }, []),
   );
 
@@ -32,49 +33,47 @@ export default function Panel() {
   };
 
   // Obtener los detalles del usuario logueado y su progreso
-  useEffect(() => {
-    const fetchUsuarioYProgreso = async () => {
-      // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
-      const { data: session, error: sessionError } = await supabase.auth.getSession();
+  const fetchUsuarioYProgreso = async () => {
+    // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
+    const { data: session, error: sessionError } = await supabase.auth.getSession();
 
-      if (sessionError) {
-        console.error('Error al obtener la sesión:', sessionError.message);
+    if (sessionError) {
+      console.error('Error al obtener la sesión:', sessionError.message);
+      return;
+    }
+
+    const user = session?.session?.user;
+
+    if (user) {
+      // Paso 2: Consultar la tabla Usuario para obtener el nombre
+      const { data: userData, error: userError } = await supabase
+        .from('usuario')
+        .select('name')
+        .eq('email', user.email)
+        .single(); // Usamos single ya que solo esperamos un único resultado
+
+      if (userError) {
+        console.error('Error al obtener el nombre del usuario:', userError.message);
         return;
       }
 
-      const user = session?.session?.user;
+      setUsuario({ email: user.email, name: userData?.name });
 
-      if (user) {
-        // Paso 2: Consultar la tabla Usuario para obtener el nombre
-        const { data: userData, error: userError } = await supabase
-          .from('usuario')
-          .select('name')
-          .eq('email', user.email)
-          .single(); // Usamos single ya que solo esperamos un único resultado
+      // Paso 3: Obtenemos el progreso del usuario desde la tabla ProgressTable
+      const { data: progressData, error: progressError } = await supabase
+        .from('ProgressTable')
+        .select('level_number, completed')
+        .eq('email', user.email); // Filtramos por el email del usuario actual
 
-        if (userError) {
-          console.error('Error al obtener el nombre del usuario:', userError.message);
-          return;
-        }
-
-        setUsuario({ email: user.email, name: userData?.name });
-
-        // Paso 3: Obtenemos el progreso del usuario desde la tabla ProgressTable
-        const { data: progressData, error: progressError } = await supabase
-          .from('ProgressTable')
-          .select('level_number, completed')
-          .eq('email', user.email); // Filtramos por el email del usuario actual
-
-        if (progressError) {
-          console.error('Error al obtener el progreso:', progressError.message);
-        } else {
-          setProgreso(progressData); // Guardamos el progreso en el estado
-        }
+      if (progressError) {
+        console.error('Error al obtener el progreso:', progressError.message);
+      } else {
+        setProgreso(progressData); // Guardamos el progreso en el estado
       }
-    };
+    }
+  };
 
-    fetchUsuarioYProgreso();
-  }, []);
+  fetchUsuarioYProgreso();
 
   // Si el usuario o el progreso no están listos, mostramos un mensaje de carga
   if (!usuario || !progreso) {

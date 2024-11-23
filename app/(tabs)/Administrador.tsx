@@ -1,38 +1,62 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
+import { useFocusEffect } from 'expo-router';
 
 export default function AdminDashboard() {
   const navigation = useNavigation();
   const [usuario, setUsuario] = useState<any>(null); // Estado para almacenar información del usuario
 
   // Obtener los detalles del usuario logueado y su progreso
-  useEffect(() => {
-    const fetchUsuario = async () => {
-        // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
-        const { data: session, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) {
-            console.error('Error al obtener la sesión:', sessionError.message);
+  useFocusEffect(
+    useCallback(() => {
+        fetchUsuario();
+        checkSession();
+    }, []),
+);
+
+const checkSession = async () => {
+  try {
+      const { data: { session } } = await supabase.auth.getSession(); // Método correcto para obtener la sesión
+      if (!session) {
+          navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
+      }
+  } catch {
+      navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
+      return;
+  }
+};
+
+
+const fetchUsuario = async () => {
+    // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
+    const { data: session, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) {
+        console.error('Error al obtener la sesión:', sessionError.message);
+        return;
+    }
+    const user = session?.session?.user;
+    if (user) {
+        // Paso 2: Consultar la tabla Usuario para obtener el nombre
+        const { data: userData, error: userError } = await supabase
+            .from('usuario')
+            .select('name, is_admin')
+            .eq('email', user.email)
+            .single(); // Usamos single ya que solo esperamos un único resultado
+        if (userError) {
+            console.error('Error al obtener el nombre del usuario:', userError.message);
             return;
         }
-        const user = session?.session?.user;
-        if (user) {
-            // Paso 2: Consultar la tabla Usuario para obtener el nombre
-            const { data: userData, error: userError } = await supabase
-                .from('usuario')
-                .select('name, is_admin')
-                .eq('email', user.email)
-                .single(); // Usamos single ya que solo esperamos un único resultado
-            if (userError) {
-                console.error('Error al obtener el nombre del usuario:', userError.message);
-                return;
-            }
-            setUsuario({ email: user.email, name: userData?.name, role: userData?.is_admin});
-        }
-    };
-    fetchUsuario(); 
-  }, []);
+        setUsuario({ email: user.email, name: userData?.name, is_admin: userData?.is_admin});
+    }
+    if (usuario.is_admin){
+      return
+    }
+    else{
+      navigation.navigate('Panel'); // Navegar a la pantalla de inicio de sesión
+    }
+};
 
   return (
     <View style={styles.container}>
