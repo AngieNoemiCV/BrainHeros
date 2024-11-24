@@ -14,9 +14,10 @@ export default function Perfil() {
     );
 
     // Obtener los detalles del usuario logueado y su progreso
-    // useEffect(() => {
-    //     fetchUsuario();
-    // }, []);
+    useEffect(() => {
+        checkSession();
+        fetchUsuario();
+    }, []);
 
     const fetchUsuario = async () => {
         // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
@@ -37,7 +38,7 @@ export default function Perfil() {
                 console.error('Error al obtener el nombre del usuario:', userError.message);
                 return;
             }
-            setUsuario({ email: user.email, name: userData?.name, role: userData?.is_admin});
+            setUsuario({ email: user.email, name: userData?.name, is_admin: userData?.is_admin});
         }
     };
     // fetchUsuario();
@@ -47,6 +48,7 @@ export default function Perfil() {
     const checkSession = async () => {
         try {
             const { data: { session } } = await supabase.auth.getSession(); // Método correcto para obtener la sesión
+            // console.log(session)
             if (!session) {
                 navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
             }

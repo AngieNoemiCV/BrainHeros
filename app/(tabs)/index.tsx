@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
 import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
 import { useNavigation } from '@react-navigation/native'; // Importar el hook de navegación
 import { useFocusEffect } from 'expo-router';
@@ -15,8 +15,8 @@ export default function LoginScreen() {
     useCallback(() => {
       checkSession(); // Verificar si hay una sesión abierta
       setPassword(''),
-      setName(''),
-      setEmail('')
+        setName(''),
+        setEmail('')
     }, []),
   );
 
@@ -42,22 +42,26 @@ export default function LoginScreen() {
     );
 
     const is_admin = false
+    const emailower = email.toLowerCase()
 
     if (error) {
       Alert.alert('Error en el registro', error.message);
     } else {
       console.log("vamos a registrar Usuario")
       // Insertar en la tabla Usuario
+      
+
       const { data, error: insertError } = await supabase
         .from('usuario')
-        .insert([{ email, name, is_admin}]);
+        .insert([{ email: emailower, name, is_admin }]);
 
-        if (insertError) {
-          Alert.alert('Error al insertar usuario', insertError.message);
-        } else {
-          //Alert.alert('Registro exitoso');
-          fillProgressTable(email); // Llamamos a la función para llenar ProgressTable
-        }
+        console.log(emailower)
+      if (insertError) {
+        Alert.alert('Error al insertar usuario', insertError.message);
+      } else {
+        //Alert.alert('Registro exitoso');
+        fillProgressTable(emailower); // Llamamos a la función para llenar ProgressTable
+      }
       console.log("Registro exitoso")
       Alert.alert('Registro exitoso');
       handleLogin();
@@ -83,27 +87,27 @@ export default function LoginScreen() {
       const { data: questions, error: questionsError } = await supabase
         .from('QuestionsTable')
         .select('level');
-  
+
       if (questionsError) {
         console.error('Error al obtener los niveles:', questionsError.message);
         return;
       }
-  
+
       // Paso 2: Crear un Set para obtener niveles únicos
       const uniqueLevels = Array.from(new Set(questions.map(q => q.level)));
-  
+
       // Paso 3: Crear un array con los datos a insertar en ProgressTable
       const progressEntries = uniqueLevels.map((level) => ({
         email, // El correo del usuario como referencia
         level_number: level, // El nivel obtenido de QuestionsTable
         completed: false, // Inicialmente los niveles no están completados
       }));
-  
+
       // Paso 4: Insertar los datos en ProgressTable
       const { error: insertError } = await supabase
         .from('ProgressTable')
         .insert(progressEntries);
-  
+
       if (insertError) {
         console.error('Error al llenar ProgressTable:', insertError.message);
       } else {
@@ -117,6 +121,11 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{isRegistering ? 'Crear Cuenta' : 'Iniciar Sesión'}</Text>
+
+      <Image
+        source={require('@/assets/images/brainHerosLogo.png')}
+        style={styles.imagenStyle}
+      />
 
       {isRegistering && (
         <TextInput
@@ -182,5 +191,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
     textAlign: 'center',
     color: '#27613C',
+  },
+  imagenStyle: {
+    width: 120,
+    height: 120,
+    backgroundColor: '#27613C',
+    marginBottom: 20,
+    alignSelf: "center"
+
   },
 });

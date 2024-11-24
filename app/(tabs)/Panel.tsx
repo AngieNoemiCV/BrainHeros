@@ -1,82 +1,70 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
-import { useNavigation } from '@react-navigation/native'; // Importamos el hook para la navegación
-import { useFocusEffect } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native'; // Hook para eventos de enfoque en la pantalla
 
 export default function Panel() {
-  const [usuario, setUsuario] = useState<any>(null); // Estado para almacenar información del usuario
-  const [progreso, setProgreso] = useState<any>(null); // Estado para almacenar el progreso del usuario
+  const [usuario, setUsuario] = useState<any>(null);
+  const [progreso, setProgreso] = useState<any>(null);
+  const [loading, setLoading] = useState(true); // Estado para controlar la carga
   const navigation = useNavigation();
 
-
-  useFocusEffect(
-    useCallback(() => {
-      checkSession(); // Verificar si hay una sesión abierta
-      fetchUsuarioYProgreso();
-    }, []),
-  );
-
-  const checkSession = async () => {
+  // Función para cargar datos del usuario y su progreso
+  const fetchUsuarioYProgreso = useCallback(async () => {
+    setLoading(true); // Inicia la carga
     try {
-      const { data: { session } } = await supabase.auth.getSession(); // Método correcto para obtener la sesión
-      if (!session) {
-        navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
-      } else {
-        //console.log("Usuario logueado");
-        //console.log("Usuario logueado", session);
+      const { data: session } = await supabase.auth.getSession();
+
+      if (!session?.session) {
+        navigation.navigate('index'); // Redirigir si no hay sesión
+        return;
       }
-    } catch {
-      navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
-      return
-    }
-  };
 
-  // Obtener los detalles del usuario logueado y su progreso
-  const fetchUsuarioYProgreso = async () => {
-    // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
-    const { data: session, error: sessionError } = await supabase.auth.getSession();
+      const user = session.session.user;
 
-    if (sessionError) {
-      console.error('Error al obtener la sesión:', sessionError.message);
-      return;
-    }
-
-    const user = session?.session?.user;
-
-    if (user) {
-      // Paso 2: Consultar la tabla Usuario para obtener el nombre
+      // Obtener nombre del usuario
       const { data: userData, error: userError } = await supabase
         .from('usuario')
         .select('name')
         .eq('email', user.email)
-        .single(); // Usamos single ya que solo esperamos un único resultado
+        .single();
 
       if (userError) {
         console.error('Error al obtener el nombre del usuario:', userError.message);
+        setLoading(false);
         return;
       }
 
       setUsuario({ email: user.email, name: userData?.name });
 
-      // Paso 3: Obtenemos el progreso del usuario desde la tabla ProgressTable
+      // Obtener progreso del usuario
       const { data: progressData, error: progressError } = await supabase
         .from('ProgressTable')
         .select('level_number, completed')
-        .eq('email', user.email); // Filtramos por el email del usuario actual
+        .eq('email', user.email);
 
       if (progressError) {
         console.error('Error al obtener el progreso:', progressError.message);
       } else {
-        setProgreso(progressData); // Guardamos el progreso en el estado
+        setProgreso(progressData);
       }
+    } catch (error) {
+      console.error('Error durante la carga de datos:', error);
+    } finally {
+      setLoading(false); // Finaliza la carga
     }
-  };
+  }, [navigation]);
 
-  fetchUsuarioYProgreso();
+  // Ejecutar fetch de datos solo cuando la pantalla está en foco
+  useFocusEffect(
+    useCallback(() => {
+      fetchUsuarioYProgreso();
+    }, [fetchUsuarioYProgreso])
+  );
 
-  // Si el usuario o el progreso no están listos, mostramos un mensaje de carga
-  if (!usuario || !progreso) {
+  // Mostrar pantalla de carga mientras los datos se obtienen
+  if (loading) {
     return (
       <View style={styles.container}>
         <Text>Cargando datos...</Text>
@@ -84,20 +72,24 @@ export default function Panel() {
     );
   }
 
-  // Calculamos el progreso actual. Esto depende de la estructura de tu base de datos.
-  // Por ejemplo, aquí asumimos que `progreso` es un array con varios niveles.
+  if (!usuario || !progreso) {
+    return (
+      <View style={styles.container}>
+        <Text>No se pudieron cargar los datos.</Text>
+      </View>
+    );
+  }
+
   const nivelesCompletados = progreso.filter((nivel: any) => nivel.completed).length;
   const totalNiveles = progreso.length;
 
   return (
     <View style={styles.container}>
-      {/* Header con saludo */}
       <View style={styles.header}>
         <Text style={styles.greeting}>¡Hola {usuario.name || usuario.email}!</Text>
         <Text style={styles.subHeader}>Bienvenido a tu panel de control</Text>
       </View>
 
-      {/* Sección de progreso del usuario */}
       <View style={styles.progressSection}>
         <Text style={styles.progressTitle}>Progreso del usuario</Text>
         <Text style={styles.progressText}>
@@ -105,7 +97,6 @@ export default function Panel() {
         </Text>
       </View>
 
-      {/* Botones para navegar a las principales secciones */}
       <View style={styles.buttonsContainer}>
         <TouchableOpacity
           style={styles.button}
@@ -179,5 +170,4 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
   },
-
 });

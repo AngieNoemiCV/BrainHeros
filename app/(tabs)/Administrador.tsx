@@ -50,12 +50,12 @@ const fetchUsuario = async () => {
         }
         setUsuario({ email: user.email, name: userData?.name, is_admin: userData?.is_admin});
     }
-    if (usuario.is_admin){
-      return
-    }
-    else{
-      navigation.navigate('Panel'); // Navegar a la pantalla de inicio de sesión
-    }
+    // if (usuario.is_admin){
+    //   return
+    // }
+    // else{
+    //   navigation.navigate('Panel'); // Navegar a la pantalla de inicio de sesión
+    // }
 };
 
   return (

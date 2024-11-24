@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Button, TouchableOpacity, Alert } from 'react-native';
 import { supabase } from '@/database/supabase.js';
-import { useNavigation, useRoute } from '@react-navigation/native'; // Importamos useRoute para obtener los parámetros
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'; // Importamos useRoute para obtener los parámetros
 
 
 
@@ -13,48 +13,52 @@ export default function EditQuestion() {
     const [level, setLevel] = useState('');
     const [options, setOptions] = useState([]);
 
-    // Cargar datos iniciales
-    useEffect(() => {
-        const fetchQuestionData = async () => {
-            // Obtener la pregunta
-            const { data: questionData, error: questionError } = await supabase
-                .from('QuestionsTable')
-                .select('question, level')
-                .eq('id_question', questionId)
-                .single();
+    useFocusEffect(
+        useCallback(() => {
+            fetchQuestionData();
+        }, []),
+    );
 
-            if (questionError) {
-                console.error('Error al cargar la pregunta:', questionError.message);
-                Alert.alert('Error', 'No se pudo cargar la pregunta.');
-                return;
-            }
 
-            setQuestion(questionData.question);
-            setLevel(String(questionData.level));
+    const fetchQuestionData = async () => {
+        // Obtener la pregunta
+        const { data: questionData, error: questionError } = await supabase
+            .from('QuestionsTable')
+            .select('question, level')
+            .eq('id_question', questionId)
+            .single();
 
-            // Obtener las opciones
-            const { data: optionsData, error: optionsError } = await supabase
-                .from('OptionsTable')
-                .select('id_option, option_text, is_correct')
-                .eq('fk_id_question', questionId);
+        if (questionError) {
+            console.error('Error al cargar la pregunta:', questionError.message);
+            Alert.alert('Error', 'No se pudo cargar la pregunta.');
+            return;
+        }
 
-            if (optionsError) {
-                console.error('Error al cargar las opciones:', optionsError.message);
-                Alert.alert('Error', 'No se pudieron cargar las opciones.');
-                return;
-            }
+        setQuestion(questionData.question);
+        setLevel(String(questionData.level));
 
-            setOptions(
-                optionsData.map(option => ({
-                    id: option.id_option,
-                    text: option.option_text,
-                    isCorrect: !!option.is_correct, // Convertimos a boolean
-                }))
-            );
-        };
+        // Obtener las opciones
+        const { data: optionsData, error: optionsError } = await supabase
+            .from('OptionsTable')
+            .select('id_option, option_text, is_correct')
+            .eq('fk_id_question', questionId);
 
-        fetchQuestionData();
-    }, [questionId]);
+        if (optionsError) {
+            console.error('Error al cargar las opciones:', optionsError.message);
+            Alert.alert('Error', 'No se pudieron cargar las opciones.');
+            return;
+        }
+
+        setOptions(
+            optionsData.map(option => ({
+                id: option.id_option,
+                text: option.option_text,
+                isCorrect: !!option.is_correct, // Convertimos a boolean
+            }))
+        );
+    }
+
+
 
     // Guardar cambios
     const saveChanges = async () => {
@@ -103,9 +107,7 @@ export default function EditQuestion() {
         }
 
         Alert.alert('Cambios guardados', 'La pregunta y sus opciones se han actualizado correctamente.');
-        
-        
-        navigation.navigate('Administrador')
+        navigation.navigate('AdminPreguntas')
 
     };
 
@@ -172,7 +174,7 @@ export default function EditQuestion() {
             >
                 <Text style={styles.adminButtonText}>Volver a Admin</Text>
             </TouchableOpacity>
-            
+
         </View>
     );
 }

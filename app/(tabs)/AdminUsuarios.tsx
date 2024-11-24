@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, TextInput, Modal } from 'react-native';
 import { supabase } from '@/database/supabaseAdmin.js'; // Tu cliente de Supabase
-import { useNavigation } from 'expo-router';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 export default function AdministrarUsuarios() {
     const [usuarios, setUsuarios] = useState([]);
@@ -15,13 +15,10 @@ export default function AdministrarUsuarios() {
     const [editedEmail, setEditedEmail] = useState('');
     const [progressData, setProgressData] = useState([]);
 
-    const [Uid, setUid] = useState('');
+    const navigation = useNavigation();
 
-    useEffect(() => {
-        fetchUsuarios();
-    }, []);
 
-    const fetchUsuarios = async () => {
+    const fetchUsuarios = useCallback(async () => {
         setLoading(true);
     
         try {
@@ -62,7 +59,9 @@ export default function AdministrarUsuarios() {
         }
     
         setLoading(false);
-    };
+    }, [navigation]);
+
+    
 
     const openEditModal = (usuario) => {
         setSelectedUsuario(usuario);
@@ -216,8 +215,11 @@ export default function AdministrarUsuarios() {
         setLoading(false);
     };
 
-    const navigation = useNavigation();
-
+    useFocusEffect(
+        useCallback(() => {
+            fetchUsuarios();
+        }, [fetchUsuarios])
+      );
 
     return (
         <View style={styles.container}>
