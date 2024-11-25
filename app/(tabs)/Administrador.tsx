@@ -11,44 +11,50 @@ export default function AdminDashboard() {
   // Obtener los detalles del usuario logueado y su progreso
   useFocusEffect(
     useCallback(() => {
-        fetchUsuario();
-        checkSession();
+      fetchUsuario();
+      checkSession();
     }, []),
-);
+  );
 
-const checkSession = async () => {
-  try {
+  const checkSession = async () => {
+    try {
       const { data: { session } } = await supabase.auth.getSession(); // Método correcto para obtener la sesión
       if (!session) {
-          navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
+        navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
       }
-  } catch {
+    } catch {
+      const { error } = await supabase.auth.signOut();
+      if (!error) {
+        navigation.navigate('index'); // Redirigir al login al cerrar sesión
+      }
       navigation.navigate('index'); // Navegar a la pantalla de inicio de sesión
       return;
-  }
-};
+    }
+  };
 
 
-const fetchUsuario = async () => {
+
+
+  const fetchUsuario = async () => {
     // Paso 1: Obtener la sesión del usuario logueado de forma asincrónica
     const { data: session, error: sessionError } = await supabase.auth.getSession();
     if (sessionError) {
-        console.error('Error al obtener la sesión:', sessionError.message);
-        return;
+      console.error('Error al obtener la sesión:', sessionError.message);
+      return;
     }
     const user = session?.session?.user;
     if (user) {
-        // Paso 2: Consultar la tabla Usuario para obtener el nombre
-        const { data: userData, error: userError } = await supabase
-            .from('usuario')
-            .select('name, is_admin')
-            .eq('email', user.email)
-            .single(); // Usamos single ya que solo esperamos un único resultado
-        if (userError) {
-            console.error('Error al obtener el nombre del usuario:', userError.message);
-            return;
-        }
-        setUsuario({ email: user.email, name: userData?.name, is_admin: userData?.is_admin});
+      // Paso 2: Consultar la tabla Usuario para obtener el nombre
+      const { data: userData, error: userError } = await supabase
+        .from('usuario')
+        .select('name, is_admin')
+        .eq('email', user.email)
+        .single(); // Usamos single ya que solo esperamos un único resultado
+      if (userError) {
+        console.error('Error al obtener el nombre del usuario:', userError.message);
+        return;
+      }
+      setUsuario({ email: user.email, name: userData?.name, is_admin: userData?.is_admin });
     }
     // if (usuario.is_admin){
     //   return
@@ -56,7 +62,7 @@ const fetchUsuario = async () => {
     // else{
     //   navigation.navigate('Panel'); // Navegar a la pantalla de inicio de sesión
     // }
-};
+  };
 
   return (
     <View style={styles.container}>
@@ -74,6 +80,13 @@ const fetchUsuario = async () => {
         onPress={() => navigation.navigate('AdminUsuarios')}
       >
         <Text style={styles.buttonText}>Administrar Usuarios</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate('AdminReportes')}
+      >
+        <Text style={styles.buttonText}>Reportes</Text>
       </TouchableOpacity>
     </View>
   );

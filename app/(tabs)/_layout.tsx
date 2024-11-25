@@ -69,13 +69,13 @@ export default function TabLayout() {
         }}
       />
 
-      {/* <Tabs.Screen
+      <Tabs.Screen
         name="Administrador"
         options={{
           href: null,
           title: 'Presentacion',
         }}
-      /> */}
+      />
 
       <Tabs.Screen
         name="LoginPatron"
@@ -119,6 +119,14 @@ export default function TabLayout() {
 
       <Tabs.Screen
         name="AdminPreguntas"
+        options={{
+          href: null,
+          title: 'Presentacion',
+        }}
+      />
+
+      <Tabs.Screen
+        name="AdminReportes"
         options={{
           href: null,
           title: 'Presentacion',

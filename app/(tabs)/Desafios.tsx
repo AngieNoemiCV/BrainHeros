@@ -10,6 +10,8 @@ export default function Desafios() {
   const [desafioActual, setDesafioActual] = useState(0);
   const [desafios, setDesafios] = useState([]);
   const [respuestaSeleccionada, setRespuestaSeleccionada] = useState<string | null>(null);
+  const [alaprimera, setalaprimera] = useState(true);
+
 
   // Verificar si hay una sesión abierta
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function Desafios() {
   // Obtener los desafíos del nivel actual desde la base de datos
   useEffect(() => {
     const fetchDesafios = async () => {
-      // Paso 1: Obtener las preguntas del nivel actual
+      // Paso 1: Obtener todas las preguntas del nivel actual
       const { data: preguntas, error: preguntasError } = await supabase
         .from('QuestionsTable')
         .select('id_question, question')
@@ -41,9 +43,19 @@ export default function Desafios() {
         return;
       }
 
-      // Paso 2: Obtener las opciones de cada pregunta
+      if (!preguntas || preguntas.length === 0) {
+        console.warn('No se encontraron preguntas para el nivel:', nivelId);
+        return;
+      }
+
+      // Paso 2: Mezclar las preguntas aleatoriamente y tomar las primeras 10
+      const preguntasAleatorias = preguntas
+        .sort(() => Math.random() - 0.5) // Mezclar aleatoriamente
+        .slice(0, 10); // Tomar máximo 10 preguntas
+
+      // Paso 3: Obtener las opciones de cada pregunta
       const preguntasConOpciones = await Promise.all(
-        preguntas.map(async (pregunta: any) => {
+        preguntasAleatorias.map(async (pregunta: any) => {
           const { data: opciones, error: opcionesError } = await supabase
             .from('OptionsTable')
             .select('id_option, option_text, is_correct')
@@ -74,16 +86,37 @@ export default function Desafios() {
     fetchDesafios();
   }, [nivelId]);
 
+
   // Función para verificar la respuesta
   const verificarRespuesta = async () => {
     const desafio = desafios[desafioActual];
     const opcionCorrecta = desafio.opciones.find((opcion: any) => opcion.esCorrecta);
 
     if (respuestaSeleccionada === opcionCorrecta.texto) {
+      // El usuario respondió correctamente
+      if (alaprimera) {
+        try {
+          // Incrementar aciertos
+          // Pasar el ID de la pregunta como parámetro
+          const { error: aciertosError } = await supabase.rpc('incrementar_aciertos', {
+            p_id_question: desafio.id, // Pasar el ID de la pregunta como parámetro
+          });
+
+          if (aciertosError) {
+            console.error('Error al incrementar aciertos:', aciertosError.message);
+          } else {
+            console.log('Acierto registrado correctamente.');
+          }
+        } catch (error) {
+          console.error('Error al actualizar aciertos:', error);
+        }
+      }
+
       if (desafioActual < desafios.length - 1) {
         Alert.alert('¡Correcto!', 'Has respondido correctamente.');
         setDesafioActual(desafioActual + 1);
         setRespuestaSeleccionada(null);
+        setalaprimera(true)
       } else {
         Alert.alert(
           '¡Felicitaciones!',
@@ -92,28 +125,24 @@ export default function Desafios() {
             {
               text: 'OK',
               onPress: async () => {
-                // Actualizamos la tabla ProgressTable para marcar el nivel como completado
-                const { data: session } = await supabase.auth.getSession(); // Obtener la sesión actual
+                const { data: session } = await supabase.auth.getSession();
                 const user = session?.session?.user;
-
-                //console.log(user)
 
                 if (user) {
                   const { error: updateError } = await supabase
                     .from('ProgressTable')
-                    .update({ completed: true }) // Marcamos el nivel como completado
-                    .eq('email', user.email) // Filtramos por el usuario actual
-                    .eq('level_number', nivelId); // Filtramos por el nivel actual
+                    .update({ completed: true })
+                    .eq('email', user.email)
+                    .eq('level_number', nivelId);
 
                   if (updateError) {
                     console.log('Error al actualizar el progreso:', updateError.message);
                   } else {
                     console.log('Progreso actualizado exitosamente');
-                    navigation.navigate('Niveles'); // Navegar a la pantalla de Niveles
+                    navigation.navigate('Niveles');
                   }
-                }
-                else {
-                  console.log("Ocurrio algo",Error)
+                } else {
+                  console.log('Error al obtener la sesión del usuario.');
                 }
               },
             },
@@ -122,6 +151,25 @@ export default function Desafios() {
         setDesafioActual(0);
       }
     } else {
+      // El usuario respondió incorrectamente
+
+      if (alaprimera) {
+        try {
+          const { error: aciertosError } = await supabase.rpc('incrementar_equivocaciones', {
+            p_id_question: desafio.id, // Pasar el ID de la pregunta como parámetro
+          });
+          setalaprimera(false)
+
+          if (aciertosError) {
+            console.error('Error al incrementar equivocaciones:', aciertosError.message);
+          } else {
+            console.log('Equivocación registrada correctamente.');
+          }
+        } catch (error) {
+          console.error('Error al actualizar equivocaciones:', error);
+        }
+      }
+
       Alert.alert('Incorrecto', 'La respuesta correcta era: ' + opcionCorrecta.texto);
     }
   };
@@ -133,6 +181,7 @@ export default function Desafios() {
       </View>
     );
   }
+
 
   const desafio = desafios[desafioActual];
 

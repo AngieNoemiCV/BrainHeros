@@ -79,7 +79,7 @@ export default function Dashboard() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Bienvenida Angie</Text>
+            <Text style={styles.title}>Puede Agregar una pregunta</Text>
 
             <TouchableOpacity
                 style={styles.button}
@@ -141,6 +141,7 @@ export default function Dashboard() {
 
 const styles = StyleSheet.create({
     container: {
+        top: 40,
         flex: 1,
         padding: 20,
         backgroundColor: '#fff',
