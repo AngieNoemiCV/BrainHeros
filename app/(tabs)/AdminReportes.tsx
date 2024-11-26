@@ -16,6 +16,8 @@ export default function AdminDashboard() {
     const [totalDesafios, setTotalDesafios] = useState<number | null>(null);
     const [desafiosPorNivel, setDesafiosPorNivel] = useState<{ level: number; total: number }[]>([]);
 
+    const [totalUsuarios, setTotalUsuarios] = useState<number | null>(null);
+
 
     // Obtener los detalles del usuario logueado y su progreso
     useFocusEffect(
@@ -25,7 +27,7 @@ export default function AdminDashboard() {
             fetchTopQuestions();
             fetchTotalDesafios();
             fetchDesafiosPorNivel();
-            // fetchUsersByMonth();
+            fetchTotalUsuarios();
         }, []),
     );
 
@@ -193,27 +195,22 @@ export default function AdminDashboard() {
     };
 
 
-    // const fetchUsersByMonth = async () => {
-    //     // setLoading(true);
+    const fetchTotalUsuarios = async () => {
+        try {
+            const { data, error, count } = await supabase
+                .from('usuario')
+                .select('*', { count: 'exact' });
 
-    //     try {
-    //         // Obtener el usuario logueado
-    //         const { data: usersList, error: userListError } = await supabase.auth.admin.listUsers();
-    //         console.log(usersList)
+            if (error) {
+                console.error('Error al obtener el total de usuarios:', error.message);
+                return;
+            }
 
-    //         if (userListError) {
-    //             console.error('Error :', userListError);
-    //             Alert.alert('Error al cargar la lista de usuarios.');
-    //             // setLoading(false);
-    //             return;
-    //         }
-
-    //     } catch (error) {
-
-    //     }
-
-    //     // setLoading(false);
-    // }
+            setTotalUsuarios(count || 0); // Establecemos el total usando el conteo
+        } catch (error) {
+            console.error('Error inesperado al obtener el total de usuarios:', error);
+        }
+    };
 
 
 
@@ -247,6 +244,12 @@ export default function AdminDashboard() {
                         </Text>
                     </View>
                 ))}
+
+                <Text style={styles.title}>Reporte de Usuarios</Text>
+
+                <Text style={styles.text}>
+                    Total de usuarios: {totalUsuarios !== null ? totalUsuarios : 'Cargando...'}
+                </Text>
 
                 {/* asdf */}
                 <Text style={styles.title}>Reporte de Desafíos</Text>
@@ -283,61 +286,80 @@ const styles = StyleSheet.create({
         top: 40,
         flex: 1,
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#f2f4f7',
         padding: 20,
         bottom: 80,
     },
     scrollContainer: {
         flexGrow: 1,
         justifyContent: 'flex-start',
-        backgroundColor: '#fff',
+        backgroundColor: '#f2f4f7',
     },
     header: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 10,
-    },
-    card: {
-        padding: 15,
-        marginBottom: 10,
-        backgroundColor: '#fff',
-        borderRadius: 8,
-        elevation: 2,
-    },
-    question: {
-        fontSize: 16,
-        color: '#555',
-    },
-    title: {
         fontSize: 24,
         fontWeight: 'bold',
+        color: '#34495e',
         marginBottom: 20,
+        textAlign: 'center',
+    },
+    card: {
+        padding: 20,
+        marginBottom: 15,
+        backgroundColor: '#ffffff',
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3,
+        width: '90%',
+        alignItems: "center",
+    },
+    question: {
+        fontSize: 18,
+        color: '#2c3e50',
+        fontWeight: '500',
+    },
+    title: {
+        fontSize: 26,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        color: '#2c3e50',
+        textAlign: 'center',
     },
     subtitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        marginTop: 20,
+        marginTop: 25,
+        marginBottom: 10,
+        color: '#7f8c8d',
     },
     text: {
         fontSize: 16,
         marginVertical: 5,
+        marginBottom: 20,
+        color: '#34495e',
     },
     button: {
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        backgroundColor: '#4CAF50',
-        borderRadius: 5,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        backgroundColor: '#1abc9c',
+        borderRadius: 8,
         marginRight: 10,
         width: '45%',
-        marginBottom: 10,
+        marginBottom: 20,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 3,
     },
     buttonText: {
-        fontSize: 16,
-        color: '#FFFFFF',
+        fontSize: 18,
+        color: '#ffffff',
         fontWeight: 'bold',
-      },
+    },
 });
