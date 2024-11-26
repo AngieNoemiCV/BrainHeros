@@ -93,7 +93,7 @@ export default function Desafios() {
     const opcionCorrecta = desafio.opciones.find((opcion: any) => opcion.esCorrecta);
 
     if (respuestaSeleccionada === opcionCorrecta.texto) {
-      // El usuario respondió correctamente
+      // El usuario respondió correctamente a la primera
       if (alaprimera) {
         try {
           // Incrementar aciertos

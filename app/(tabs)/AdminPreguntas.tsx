@@ -84,7 +84,7 @@
           onPress={() => navigation.navigate('Administrador')}
         // handleSaveUsername
         >
-          <Text style={styles.buttonText}>Regreesar</Text>
+          <Text style={styles.buttonText}>Regresar</Text>
         </TouchableOpacity>
 
 
@@ -96,22 +96,13 @@
           <Text style={styles.buttonText}>Agregar Pregunta</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.buttonVolver}
           onPress={() => navigation.navigate('index')}
         // handleSaveUsername
         >
           <Text style={styles.buttonText}>Volver al inicio</Text>
-        </TouchableOpacity>
-
-        {/* <TouchableOpacity
-          style={styles.button}
-          onPress={resetProgress}
-        >
-          <Text style={styles.buttonText}>Reiniciar Progreso</Text>
         </TouchableOpacity> */}
-
-
 
         {/* List of questions grouped by levels */}
 
@@ -213,7 +204,7 @@
       paddingVertical: 15,
       paddingHorizontal: 25,
       borderRadius: 10,
-      marginBottom: 10,
+      marginBottom: 30,
     },
     buttonVolver: {
       backgroundColor: '#4A628A',

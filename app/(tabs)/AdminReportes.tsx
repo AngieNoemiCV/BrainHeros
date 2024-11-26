@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { supabase } from '@/database/supabase'; // Importar el cliente de Supabase
+import { supabase } from '@/database/supabaseAdmin'; // Importar el cliente de Supabase
 import { useFocusEffect } from 'expo-router';
 
 export default function AdminDashboard() {
     const navigation = useNavigation();
     const [usuario, setUsuario] = useState<any>(null); // Estado para almacenar información del usuario
+    const [usuariosList, setUsuariosList] = useState([]);
+
 
     const [topCorrect, setTopCorrect] = useState([]);
     const [topMistakes, setTopMistakes] = useState([]);
@@ -23,6 +25,7 @@ export default function AdminDashboard() {
             fetchTopQuestions();
             fetchTotalDesafios();
             fetchDesafiosPorNivel();
+            // fetchUsersByMonth();
         }, []),
     );
 
@@ -69,7 +72,8 @@ export default function AdminDashboard() {
                 return
             }
             else {
-                navigation.navigate('Panel'); // Navegar a la pantalla de inicio de sesión
+                console.log('usuario no admin')
+                // navigation.navigate('Panel'); // Navegar a la pantalla de inicio de sesión
             }
         }
 
@@ -190,25 +194,41 @@ export default function AdminDashboard() {
 
 
     // const fetchUsersByMonth = async () => {
-    //     const { data, error } = await supabase
-    //         .from('usuario')
-    //         .select('*')
-    //         .gte('created_at', new Date(new Date().setDate(1)).toISOString())
-    //         .lte('created_at', new Date().toISOString());
+    //     // setLoading(true);
 
-    //     if (error) {
-    //         console.error('Error fetching users by month:', error);
-    //         return 0; 
+    //     try {
+    //         // Obtener el usuario logueado
+    //         const { data: usersList, error: userListError } = await supabase.auth.admin.listUsers();
+    //         console.log(usersList)
+
+    //         if (userListError) {
+    //             console.error('Error :', userListError);
+    //             Alert.alert('Error al cargar la lista de usuarios.');
+    //             // setLoading(false);
+    //             return;
+    //         }
+
+    //     } catch (error) {
+
     //     }
 
-    //     return data.length;
-    // };
+    //     // setLoading(false);
+    // }
 
 
 
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style={styles.container}>
+
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={() => navigation.navigate('Administrador')}
+                // handleSaveUsername
+                >
+                    <Text style={styles.buttonText}>Regresar</Text>
+                </TouchableOpacity>
+
                 <Text style={styles.header}>Preguntas con más aciertos</Text>
 
                 {topCorrect.map((question, index) => (
@@ -303,4 +323,21 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginVertical: 5,
     },
+    button: {
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        backgroundColor: '#4CAF50',
+        borderRadius: 5,
+        marginRight: 10,
+        width: '45%',
+        marginBottom: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+    },
+    buttonText: {
+        fontSize: 16,
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+      },
 });
