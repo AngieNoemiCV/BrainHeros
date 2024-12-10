@@ -22,8 +22,8 @@ export default function AdminDashboard() {
     // Obtener los detalles del usuario logueado y su progreso
     useFocusEffect(
         useCallback(() => {
-            fetchUsuario();
-            checkSession();
+            // fetchUsuario(); CAMBIO
+            // checkSession(); CAMBIO
             fetchTopQuestions();
             fetchTotalDesafios();
             fetchDesafiosPorNivel();

@@ -9,9 +9,9 @@ const SUPABASE_SECRET_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdX
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY, {
   auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
+    // storage: AsyncStorage,
+    // autoRefreshToken: true,
+    // persistSession: true,
+    // detectSessionInUrl: false,
   },
 });
