@@ -17,7 +17,6 @@ export default function TabLayout() {
       <Tabs.Screen
         name="Panel"
         options={{
-          href: null,
           title: 'Home',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} />
@@ -27,7 +26,6 @@ export default function TabLayout() {
       <Tabs.Screen
         name="Niveles"
         options={{
-          href: null,
           title: 'Niveles',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? 'checkmark-circle' : 'checkmark-circle'} color={color} />
@@ -38,7 +36,6 @@ export default function TabLayout() {
       <Tabs.Screen
         name="Trofeos"
         options={{
-          href: null,
           title: 'Trofeos',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? 'trophy' : 'trophy-outline'} color={color} />
@@ -49,7 +46,6 @@ export default function TabLayout() {
       <Tabs.Screen
         name="Perfil"
         options={{
-          href: null,
           title: 'Perfil',
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? 'person' : 'person'} color={color} />
